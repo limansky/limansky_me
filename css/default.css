@@ -12,13 +12,17 @@
   padding-left: 15px;
 }
 
-.container .text-muted {
+.footer .container .text-muted {
   margin: 20px 0;
 }
 
 .post-info {
   bottom-margin: 20px;
   color: #999999;
+}
+
+.right {
+  float: right;
 }
 
 .sourceCode span.co { color: #969896; }
