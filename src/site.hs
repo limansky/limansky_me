@@ -15,8 +15,8 @@ main = hakyll $ do
         route   idRoute
         compile compressCssCompiler
 
-    match "about.md" $ do
-        route   $ setExtension "html"
+    match "pages/about.md" $ do
+        route   $ stripPages `composeRoutes` setExtension "html"
         compile $ pandocCompiler
             >>= loadAndApplyTemplate "templates/default.html" defaultContext
             >>= relativizeUrls
@@ -52,8 +52,8 @@ main = hakyll $ do
                 >>= relativizeUrls
 
 
-    match "index.html" $ do
-        route idRoute
+    match "pages/index.html" $ do
+        route stripPages
         compile $ do
             posts <- recentFirst =<< loadAll "posts/*"
             let indexCtx =
@@ -69,6 +69,8 @@ main = hakyll $ do
 
 
 --------------------------------------------------------------------------------
+stripPages = gsubRoute "pages/" $ const ""
+
 postCtx :: Context String
 postCtx =
     dateField "date" "%B %e, %Y" `mappend`
