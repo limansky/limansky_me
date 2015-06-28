@@ -1,6 +1,6 @@
 ---
 title: Why Hakyll?
-tags: hakyll
+tags: Hakyll
 ---
 
 

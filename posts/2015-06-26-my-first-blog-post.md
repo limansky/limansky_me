@@ -1,6 +1,6 @@
 ---
 title: My first blog post
-tags: hakyll
+tags: Hakyll
 ---
 
 This is my first post in this blog, just to be sure that Hakyll is working.
