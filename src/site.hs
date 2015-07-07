@@ -15,9 +15,10 @@ main = hakyll $ do
         route   idRoute
         compile compressCssCompiler
 
-    match "pages/about.md" $ do
+    match (fromList ["pages/about.md", "pages/404.md"]) $ do
         route   $ stripPages `composeRoutes` setExtension "html"
         compile $ pandocCompiler
+            >>= loadAndApplyTemplate "templates/page.html" defaultContext
             >>= loadAndApplyTemplate "templates/default.html" defaultContext
             >>= relativizeUrls
 
