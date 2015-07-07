@@ -1,6 +1,6 @@
 --------------------------------------------------------------------------------
 {-# LANGUAGE OverloadedStrings #-}
-import           Data.Monoid (mappend)
+import           Data.Monoid (mappend, (<>))
 import           Hakyll
 
 
@@ -22,19 +22,35 @@ main = hakyll $ do
             >>= loadAndApplyTemplate "templates/default.html" defaultContext
             >>= relativizeUrls
 
+    tags <- buildTags "posts/*" (fromCapture "tags/*.html")
+
+    tagsRules tags $ \tag pattern -> do
+        let title = "Posts tagged " ++ tag
+        route stripPages
+        compile $ do
+            posts <- recentFirst =<< loadAll pattern
+            let ctx = constField "title" title <>
+                      listField "posts" (postCtx tags) (return posts) <>
+                      defaultContext
+
+            makeItem ""
+                >>= loadAndApplyTemplate "templates/posts.html" ctx
+                >>= loadAndApplyTemplate "templates/default.html" ctx
+                >>= relativizeUrls
+
     match "posts/*" $ do
         route $ setExtension "html"
         compile $ pandocCompiler
             >>= saveSnapshot "content"
-            >>= loadAndApplyTemplate "templates/post.html"    postCtx
-            >>= loadAndApplyTemplate "templates/post-with-comment.html" postCtx
-            >>= loadAndApplyTemplate "templates/default.html" postCtx
+            >>= loadAndApplyTemplate "templates/post.html" (postCtx tags)
+            >>= loadAndApplyTemplate "templates/post-with-comment.html" defaultContext
+            >>= loadAndApplyTemplate "templates/default.html" defaultContext
             >>= relativizeUrls
 
     create ["atom.xml"] $ do
         route idRoute
         compile $ do
-            let feedCtx = postCtx `mappend` bodyField "description"
+            let feedCtx = (postCtx tags) `mappend` bodyField "description"
             posts <- fmap (take 10) . recentFirst =<<
                 loadAllSnapshots "posts/*" "content"
             renderAtom feedCfg feedCtx posts
@@ -44,7 +60,7 @@ main = hakyll $ do
         compile $ do
             posts <- recentFirst =<< loadAll "posts/*"
             let archiveCtx =
-                    listField "posts" postCtx (return posts) `mappend`
+                    listField "posts" (postCtx tags) (return posts) `mappend`
                     constField "title" "Archives"            `mappend`
                     defaultContext
 
@@ -59,7 +75,7 @@ main = hakyll $ do
         compile $ do
             posts <- recentFirst =<< loadAllSnapshots "posts/*" "content"
             let indexCtx =
-                    listField "posts" previewCtx (return posts) `mappend`
+                    listField "posts" (previewCtx tags) (return posts) `mappend`
                     defaultContext
 
             getResourceBody
@@ -73,13 +89,14 @@ main = hakyll $ do
 --------------------------------------------------------------------------------
 stripPages = gsubRoute "pages/" $ const ""
 
-postCtx :: Context String
-postCtx =
+postCtx :: Tags -> Context String
+postCtx tags =
     dateField "date" "%B %e, %Y" `mappend`
+    tagsField "tags" tags `mappend`
     defaultContext
 
-previewCtx :: Context String
-previewCtx = teaserField "preview" "content" `mappend` postCtx
+previewCtx :: Tags -> Context String
+previewCtx tags = teaserField "preview" "content" `mappend` postCtx tags
 
 feedCfg :: FeedConfiguration
 feedCfg = FeedConfiguration
