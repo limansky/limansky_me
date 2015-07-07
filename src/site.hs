@@ -24,8 +24,9 @@ main = hakyll $ do
     match "posts/*" $ do
         route $ setExtension "html"
         compile $ pandocCompiler
-            >>= loadAndApplyTemplate "templates/post.html"    postCtx
             >>= saveSnapshot "content"
+            >>= loadAndApplyTemplate "templates/post.html"    postCtx
+            >>= loadAndApplyTemplate "templates/post-with-comment.html" postCtx
             >>= loadAndApplyTemplate "templates/default.html" postCtx
             >>= relativizeUrls
 
@@ -55,9 +56,9 @@ main = hakyll $ do
     match "pages/index.html" $ do
         route stripPages
         compile $ do
-            posts <- recentFirst =<< loadAll "posts/*"
+            posts <- recentFirst =<< loadAllSnapshots "posts/*" "content"
             let indexCtx =
-                    listField "posts" postCtx (return posts) `mappend`
+                    listField "posts" previewCtx (return posts) `mappend`
                     defaultContext
 
             getResourceBody
@@ -75,6 +76,9 @@ postCtx :: Context String
 postCtx =
     dateField "date" "%B %e, %Y" `mappend`
     defaultContext
+
+previewCtx :: Context String
+previewCtx = teaserField "preview" "content" `mappend` postCtx
 
 feedCfg :: FeedConfiguration
 feedCfg = FeedConfiguration

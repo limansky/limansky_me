@@ -3,7 +3,6 @@ title: Why Hakyll?
 tags: Hakyll
 ---
 
-
 Well, I thought about personal blog for a quite long time, but to be honest I'm
 really lazy.  And the second thing, I don't like most of CMS I've ever seen.
 So, the idea of static generation is looking much more suitable for this kind of

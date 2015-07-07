@@ -1,0 +1,17 @@
+<ul>
+    $for(posts)$
+            <a href="$url$"><h1>$title$</h1></a>
+            <p class="post-info">
+                Posted on $date$
+                $if(author)$
+                    by $author$
+                $endif$
+            </p>
+            $if(preview)$
+                $preview$
+                <a href="$url$" class="btn"><i class="fa fa-forward"></i>Continue reading</a>
+            $else$
+                $body$
+            $endif$
+    $endfor$
+</ul>

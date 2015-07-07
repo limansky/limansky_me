@@ -20,6 +20,8 @@ $ layman -a haskell
 $ echo "/var/lib/layman/make.conf" >> /etc/portage/make.conf
 ```
 
+<!--more-->
+
 The next problem is that Hakyll requires Pandoc version >= 1.14 (which is also
 available in the overlay), and it has dependency on GHC >= 7.8.  And this means
 that you have to unmask lot of packages.  Bad news: autounmasking doesn't work.
