@@ -23,3 +23,8 @@
 .sourceCode span.st { color: #183691; font-style: italic; }
 .sourceCode span.dv { color: #183691; }
 .sourceCode span.fu { color: #614A82; }
+
+.sourceCode .diff span.kw { color: #a71d5d; font-weight: bold; }
+.sourceCode .diff span.dt { color: #189136; font-weight: bold; }
+.sourceCode .diff span.st { color: #a71d5d; }
+.sourceCode .diff span.ot { color: #189136; }
