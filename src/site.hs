@@ -2,11 +2,12 @@
 {-# LANGUAGE OverloadedStrings #-}
 import           Data.Monoid (mappend, (<>))
 import           Hakyll
-
+import           System.Environment (getArgs, withArgs)
+import           Control.Applicative ((<$>))
 
 --------------------------------------------------------------------------------
 main :: IO ()
-main = hakyll $ do
+main = checkArgs <$> getArgs >>= \(postsPattern, conf, args) -> withArgs args $ hakyllWith conf $ do
     match "images/*" $ do
         route   idRoute
         compile copyFileCompiler
@@ -22,7 +23,7 @@ main = hakyll $ do
             >>= loadAndApplyTemplate "templates/default.html" defaultContext
             >>= relativizeUrls
 
-    tags <- buildTags "posts/*" (fromCapture "tags/*.html")
+    tags <- buildTags postsPattern (fromCapture "tags/*.html")
 
     tagsRules tags $ \tag pattern -> do
         let title = "Posts tagged " ++ tag
@@ -38,7 +39,7 @@ main = hakyll $ do
                 >>= loadAndApplyTemplate "templates/default.html" ctx
                 >>= relativizeUrls
 
-    match "posts/*" $ do
+    match postsPattern $ do
         route $ setExtension "html"
         compile $ pandocCompiler
             >>= saveSnapshot "content"
@@ -52,13 +53,13 @@ main = hakyll $ do
         compile $ do
             let feedCtx = (postCtx tags) `mappend` bodyField "description"
             posts <- fmap (take 10) . recentFirst =<<
-                loadAllSnapshots "posts/*" "content"
+                loadAllSnapshots postsPattern "content"
             renderAtom feedCfg feedCtx posts
 
     create ["archive.html"] $ do
         route idRoute
         compile $ do
-            posts <- recentFirst =<< loadAll "posts/*"
+            posts <- recentFirst =<< loadAll postsPattern
             let archiveCtx =
                     listField "posts" (postCtx tags) (return posts) `mappend`
                     constField "title" "Archives"            `mappend`
@@ -73,7 +74,7 @@ main = hakyll $ do
     match "pages/index.html" $ do
         route stripPages
         compile $ do
-            posts <- recentFirst =<< loadAllSnapshots "posts/*" "content"
+            posts <- recentFirst =<< loadAllSnapshots postsPattern "content"
             let indexCtx =
                     listField "posts" (previewCtx tags) (return posts) `mappend`
                     defaultContext
@@ -106,3 +107,15 @@ feedCfg = FeedConfiguration
     , feedAuthorEmail = "mike.limansky@gmail.com"
     , feedRoot = "http://www.limansky.me"
     }
+
+-- Check argrumens for '--with-drafts'
+-- returns post pattern, configuration, command arguments
+checkArgs :: [String] -> (Pattern, Configuration, [String])
+checkArgs args = if (elem "--with-drafts" args)
+    then ("posts/*" .||. "drafts/*", draftConf, filter (/= "--with-drafts") args)
+    else ("posts/*", defaultConfiguration, args)
+    where draftConf = defaultConfiguration {
+        destinationDirectory = "_draftSite"
+      , storeDirectory = "_draftCache"
+      , tmpDirectory = "_draftCache/tmp"
+      }

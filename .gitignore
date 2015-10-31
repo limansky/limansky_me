@@ -1,4 +1,6 @@
 _site/
 _cache/
+_draftSite/
+_draftCache/
 dist/
 *.swp
