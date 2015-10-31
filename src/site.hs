@@ -1,13 +1,16 @@
 --------------------------------------------------------------------------------
 {-# LANGUAGE OverloadedStrings #-}
-import           Data.Monoid (mappend, (<>))
-import           Hakyll
-import           System.Environment (getArgs, withArgs)
-import           Control.Applicative ((<$>))
+import Control.Applicative ((<$>))
+import Data.List (partition)
+import Data.Monoid (mappend, (<>))
+import System.Environment (getArgs, withArgs)
+import Hakyll
 
 --------------------------------------------------------------------------------
 main :: IO ()
-main = checkArgs <$> getArgs >>= \(postsPattern, conf, args) -> withArgs args $ hakyllWith conf $ do
+main = checkArgs <$> getArgs >>=
+        \(postsPattern, conf, args) -> withArgs args $ hakyllWith conf $ do
+
     match "images/*" $ do
         route   idRoute
         compile copyFileCompiler
@@ -111,9 +114,9 @@ feedCfg = FeedConfiguration
 -- Check argrumens for '--with-drafts'
 -- returns post pattern, configuration, command arguments
 checkArgs :: [String] -> (Pattern, Configuration, [String])
-checkArgs args = if (elem "--with-drafts" args)
-    then ("posts/*" .||. "drafts/*", draftConf, filter (/= "--with-drafts") args)
-    else ("posts/*", defaultConfiguration, args)
+checkArgs args = case partition (/= "--with-drafts") args of
+    (_, []) -> ("posts/*",                  defaultConfiguration,   args)
+    (as, _) -> ("posts/*" .||. "drafts/*",  draftConf,              as)
     where draftConf = defaultConfiguration {
         destinationDirectory = "_draftSite"
       , storeDirectory = "_draftCache"
