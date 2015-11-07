@@ -3,19 +3,19 @@ title: Draft posts with Hakyll
 tags: Hakyll, Haskell
 ---
 
-If you'd like to write a long posts in your Hakyll blog, your often can found
-that I'd like to commit a post (or several posts), but your are not going to
+If you'd like to write a long posts in your Hakyll blog, you often can find
+that you'd like to commit a post (or several posts), but you're are not going to
 deploy it on server.  Here is my solution inspired by [this
 post](http://www.blaenkdenum.com/posts/drafts-in-hakyll/).  Now I can call
 Hakyll with `--with-drafts` and it will use both `posts` and `drafts`
 directories to collect posts data.
 
-There are several problems to solve.
+There are several issues I had faced with when I was solving this problem:
 
-0. Detect what we are in the draft mode.
+0. Detect what program is running in the draft mode.
 1. Pass posts to Hakyll.
-2. It is safer to have separate folder for generated site in draft mode to
-   avoid deploy of draft articles by mistake.
+2. It is safer to have a separate folder for generated site while running in the
+   draft mode to avoid the draft articles deploying by mistake.
 3. Hakyll itself uses [cmdargs](https://hackage.haskell.org/package/cmdargs)
    package which checks if the command is executed with proper options.
 
@@ -24,7 +24,7 @@ There are several problems to solve.
 Passing posts to Hakyll
 -----------------------
 
-This is the easier one. Hakyll uses patterns to match your blog posts to
+This is the easiest step. Hakyll uses pattern to match your blog posts to
 process them.  By default it's `"posts/*"`.  In many cases it is used in
 several places, so it's a really good idea to define a variable.  Patterns can
 be combined using `.||.` operator.  So we can have something like:
@@ -68,8 +68,8 @@ draftConfiguration = defaultConfiguration {
 Putting all together
 --------------------
 
-So far so good, but we still not detect if it's a draft mode or not.  All we
-need is to process command line arguments:
+So far so good, but we still haven't detected if it's a draft mode or not.  We
+need to process command line arguments:
 
 ```Haskel
 main = do
@@ -77,9 +77,9 @@ main = do
 ```
 
 Unfortunately, this is not enough.  As I mentioned before, cmdargs does not
-allow to pass unknown options, so we need to filter out all our staff before
-passing it to hakyll.  The good news is that we can process arguments and
-replace them using `withArgs` function. So the final solution is looking like
+allow to pass unknown options, so we need to filter out all our stuff before
+passing it to Hakyll.  The good news is that we can process arguments and
+replace them using `withArgs` function. So the final solution looks like
 that:
 
 ```Haskell
