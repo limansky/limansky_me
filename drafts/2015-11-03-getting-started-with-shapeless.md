@@ -6,7 +6,7 @@ tags: Scala, shapeless
 Sooner or later, every Scala programmer trying to study
 [shapeless](https://github.com/milessabin/shapeless),
 [Scalaz](https://github.com/scalaz/scalaz) or
-other libraries, which are not designed to solve one small problem, but was
+other libraries, which are not designed to solve one small problem, but were
 created to ~~explode your brain~~ change the way you are writing your code, make
 it safer and at the same time more generic.  I tried to do it several times,
 but the main problem is that there are no entry point.  There are lot of things
@@ -85,9 +85,10 @@ scala> c map toStr
 ```
 
 Ok, but how does it related to serialization problem?  Since HList is strong
-typed we can convert a class into HList, do some transformations and convert it
-back or to another class.  For example class `case class Foo(a: String, b: Int)`
-can be represented as `String::Int::HNil`.  And you don't need to write this
+typed and ordered we can convert a class into HList, do some transformations and convert it
+back. Or, we can convert it to another class.  For example class `case class
+Foo(a: String, b: Int)` can be represented as `String::Int::HNil` (we can say
+what Foo is *isomorphic* to String::Int::HNil).  You don't need to write this
 converters yourself.  Shapeless provides class `Generic[T]` to perform these
 transformations.
 
@@ -115,3 +116,26 @@ generics:
 scala> fooGen.from(barGen.to(Bar("Some data for Foo", 69)))
 res3: Foo = Foo(Some data for Foo,69)
 ```
+
+Now, we can write a dummy converter for any classes isomorphic to the same
+HList.
+
+```Scala
+object Converter {
+  def convert[T,U,R <: HList](t: T,
+    tGen: Generic[T] { type Repr = R },
+    uGen: Generic[U] { type Repr = R }
+  ): U =  uGen.from(tGen.to(t))
+}
+```
+
+Here we specify, that `T` and `U` have same representation.  And we can skip
+creating of `Generic`s istances explisitely.  So we can define converter as:
+
+```Scala
+object Converter {
+  def convert[T, U, R <: HList](t: T)(implicit
+    tGen: Generic.Aux[T, R],
+    uGen: Generic.Aux[U, R]
+  ): U = uGen.from(tGen.to(t))
+}
