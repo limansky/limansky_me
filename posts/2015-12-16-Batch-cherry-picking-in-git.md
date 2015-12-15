@@ -52,7 +52,7 @@ git rev-log --reverse C..S --grep='featureX' --no-merge | git cherry-pick --stdi
 ```
 
 If any conflict occurs, you have to solve it (using `git mergetool` or manually
-with `git add` and then run `git cherry-pick --continue` until all commits are
+with `git add`) and then run `git cherry-pick --continue` until all commits are
 copied.
 
 Finally, I you are going to merge the `release` branch into your master, it
