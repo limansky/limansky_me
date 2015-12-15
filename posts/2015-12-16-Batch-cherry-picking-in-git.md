@@ -16,9 +16,10 @@ like this:
      R -- Q                                                    release
 ```
 
-So, my goal is to create a `feature'` branch on top of the `release` and move the
+So, my goal is to create a `feature'` branch on top of the `release` and copy the
 commits `Z`, `Y`, `W`, `V`, `T` and `S` there:
 
+<!--more-->
 
 ```
                Z -- Y -- X -- W -- V -- U -- T -- S            feature
@@ -39,11 +40,30 @@ get only related commits, and skip commits from the master and merges. The
 `cherry-pick` command itself doesn't have this function, but it can take
 commits from another command using `--stdin` option.
 
-The powerfull command to get different commit lists is `git rev-log`.
+The powerful command to get different commit lists is `git rev-log`.  You can
+use `--grep` option to filter the commits (I used bug tracker id, but it can be
+used with any other criteria).  Since we need to apply commits in chronological
+order, `--reverse` option shall be specified.  And the last, but lot least
+required option `--no-merge` is required to avoid merge-commits in the list.
+Now the list of commits can be passed to `git cherry-pick` command:
 
 ```
 git rev-log --reverse C..S --grep='featureX' --no-merge | git cherry-pick --stdin
 ```
 
-If any conflict occurs, you have to solve it and then run `git cherry-pick
---continue` until all commits are copied.
+If any conflict occurs, you have to solve it (using `git mergetool` or manually
+with `git add` and then run `git cherry-pick --continue` until all commits are
+copied.
+
+Finally, I you are going to merge the `release` branch into your master, it
+might be a good idea to merge original `feature` branch into `master` first.
+It will simplify the merge with `release` since all conflicts between `master`
+and `feature` branches are already resolved.
+
+```
+               Z -- Y -- X -- W -- V -- U -- T -- S            feature
+              /         /              /           \
+-- A -- B -- C -- D -- E ----- F ---- G -- H ------ K -- L     master
+    \                                                   /
+     R -- Q -- Z' -- Y' -- W' -- V' -- T' ------------ S'      feature'
+```
