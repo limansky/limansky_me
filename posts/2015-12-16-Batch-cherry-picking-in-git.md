@@ -55,10 +55,10 @@ If any conflict occurs, you have to solve it (using `git mergetool` or manually
 with `git add`) and then run `git cherry-pick --continue` until all commits are
 copied.
 
-Finally, I you are going to merge the `release` branch into your master, it
+Finally, if you are going to merge the `release` branch into your master, it
 might be a good idea to merge original `feature` branch into `master` first.
 It will simplify the merge with `release` since all conflicts between `master`
-and `feature` branches are already resolved.
+and `feature` branches will be already resolved.
 
 ```
                Z -- Y -- X -- W -- V -- U -- T -- S            feature
