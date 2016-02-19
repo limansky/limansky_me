@@ -84,6 +84,7 @@ main = checkArgs <$> getArgs >>=
 
             getResourceBody
                 >>= applyAsTemplate indexCtx
+                >>= loadAndApplyTemplate "templates/right-column.html" (mainCtx tags)
                 >>= loadAndApplyTemplate "templates/default.html" indexCtx
                 >>= relativizeUrls
 
@@ -92,6 +93,11 @@ main = checkArgs <$> getArgs >>=
 
 --------------------------------------------------------------------------------
 stripPages = gsubRoute "pages/" $ const ""
+
+mainCtx :: Tags -> Context String
+mainCtx tags =
+    tagCloudField "tagCloud" 75 200 tags `mappend`
+    defaultContext
 
 postCtx :: Tags -> Context String
 postCtx tags =
