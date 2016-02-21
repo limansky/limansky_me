@@ -40,7 +40,7 @@ get only related commits, and skip commits from the master and merges. The
 `cherry-pick` command itself doesn't have this function, but it can take
 commits from another command using `--stdin` option.
 
-The powerful command to get different commit lists is `git rev-log`.  You can
+The powerful command to get different commit lists is `git rev-list`.  You can
 use `--grep` option to filter the commits (I used bug tracker id, but it can be
 used with any other criteria).  Since we need to apply commits in chronological
 order, `--reverse` option shall be specified.  And the last, but lot least
@@ -48,7 +48,7 @@ required option `--no-merge` is required to avoid merge-commits in the list.
 Now the list of commits can be passed to `git cherry-pick` command:
 
 ```
-git rev-log --reverse C..S --grep='featureX' --no-merge | git cherry-pick --stdin
+git rev-list --reverse C..S --grep='featureX' --no-merge | git cherry-pick --stdin
 ```
 
 If any conflict occurs, you have to solve it (using `git mergetool` or manually
