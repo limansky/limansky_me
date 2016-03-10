@@ -80,11 +80,11 @@ main = checkArgs <$> getArgs >>=
             posts <- recentFirst =<< loadAllSnapshots postsPattern "content"
             let indexCtx =
                     listField "posts" (previewCtx tags) (return posts) `mappend`
-                    defaultContext
+                    mainCtx tags
 
             getResourceBody
                 >>= applyAsTemplate indexCtx
-                >>= loadAndApplyTemplate "templates/right-column.html" (mainCtx tags)
+                >>= loadAndApplyTemplate "templates/right-column.html" indexCtx
                 >>= loadAndApplyTemplate "templates/default.html" indexCtx
                 >>= relativizeUrls
 
@@ -96,8 +96,10 @@ stripPages = gsubRoute "pages/" $ const ""
 
 mainCtx :: Tags -> Context String
 mainCtx tags =
-    tagCloudField "tagCloud" 75 200 tags `mappend`
-    defaultContext
+    let recentPosts = postItems >>= fmap (take 5) . recentFirst in
+      listField "recentPosts" (previewCtx tags) recentPosts `mappend`
+      tagCloudField "tagCloud" 75 200 tags `mappend`
+      defaultContext
 
 postCtx :: Tags -> Context String
 postCtx tags =
@@ -128,3 +130,8 @@ checkArgs args = case partition (/= "--with-drafts") args of
       , storeDirectory = "_draftCache"
       , tmpDirectory = "_draftCache/tmp"
       }
+
+postItems :: Compiler [Item String]
+postItems = do
+    identifiers <- getMatches "posts/*"
+    return [Item identifier "" | identifier <- identifiers]
