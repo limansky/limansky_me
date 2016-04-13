@@ -1,18 +1,16 @@
-<ul>
-    $for(posts)$
-            <a href="$url$"><h1>$title$</h1></a>
-            <p class="post-info">
-                Posted on $date$
-                $if(author)$
-                    by $author$
-                $endif$
-            </p>
-            <p class="tags">$tags$</p>
-            $if(preview)$
-                $preview$
-                <a href="$url$" class="btn"><i class="fa fa-forward"></i>Continue reading</a>
-            $else$
-                $body$
+$for(posts)$
+        <h1><a href="$url$">$title$</a></h1>
+        <p class="post-info">
+            Posted on $date$
+            $if(author)$
+                by $author$
             $endif$
-    $endfor$
-</ul>
+        </p>
+        <p class="tags">$tags$</p>
+        $if(preview)$
+            $preview$
+            <a href="$url$" class="btn"><i class="fa fa-forward"></i>Continue reading</a>
+        $else$
+            $body$
+        $endif$
+$endfor$
