@@ -48,6 +48,7 @@ main = checkArgs <$> getArgs >>=
             >>= saveSnapshot "content"
             >>= loadAndApplyTemplate "templates/post.html" (postCtx tags)
             >>= loadAndApplyTemplate "templates/post-with-comment.html" defaultContext
+            >>= loadAndApplyTemplate "templates/right-column.html" (mainCtx tags)
             >>= loadAndApplyTemplate "templates/default.html" defaultContext
             >>= relativizeUrls
 
