@@ -1,9 +1,9 @@
 ---
-title: Easy JSON analyze with spray-json.
+title: Easy JSON analyze with spray-json
 tags: Scala, Akka, Spray, DSL
 ---
 
-If you are using [Spray](http://spray.io) or [Akka HTTP](http://akka.io) to
+If you use [Spray](http://spray.io) or [Akka HTTP](http://akka.io) to
 create REST service, possible you need to work with JSON objects.  Both Spray
 and Akka HTTP have built-in support of [spray-json](https://github.com/spray/spray-json).
 
@@ -70,7 +70,7 @@ To do that we can write something like:
 ```Scala
 entity(as[Person]) { person =>
   val city = for {
-    addr <- a.fields.get("address")
+    addr <- person.extras.fields.get("address")
     ao   <- Try(addr.asJsObject).toOption
     c    <- ao.fields.get("city")
   } yield c
@@ -83,7 +83,7 @@ entity(as[Person]) { person =>
 }
 ```
 
-This code is look quite ugly.  Even with two layers we have a lot of
+This code looks quite ugly.  Even with two layers we have a lot of
 boilerplate steps: extract `JsValue`, convert to `JsObject`, extract next
 value, etc.  It would be nice to have DSL for traversing through the objects.
 I think it can be similar to XPath:
@@ -97,3 +97,59 @@ entity(as[Person]) { person =>
   }
 }
 ```
+
+Let's create implicit class to extend `JsObject`:
+
+```Scala
+implicit class JsObjectOps(val o: JsObject) extends AnyVal {
+  def / (name: String) = ???
+}
+```
+
+But what should it return? We can return `JsValue`, but there are several problems:
+
+1. The object might not contain the field we are looking for. So, we need at
+   least `Option[JsValue]`.
+2. We'd like to chain path elements, to create more complex paths.
+3. We need to have `===` and `=!=` operators to check returned values.
+
+To meet all of these requirements, we need to create another class, which will
+wrap `Option[JsValue]`:
+
+```Scala
+class JsFieldOps(val field: Option[JsValue]) {
+  def /(name: string) = field map (_ / name) getOrElse this
+  def ===(x: JsValue) = field.contains(x)
+  def =!=(x: JsValue) = !field.contains(x)
+}
+```
+
+The `===` and `=!=` are quite obvious. We just check values in the underlying
+field.  Most interesting part is the `/` method (there is no rocket science as
+well :)).  There are two cases.  If the field is empty we can just return the same
+empty object.  But if it not,  we can apply the same `/` we used initially to
+create this object (that's about the part I skipped not implemented yet).  So it
+looks like we need to extend `JsValue`, not `JsObject` to add `/`, but it have
+to be applicable only to objects.  There is a method called `asJsObject` in
+`JsObject` class, which throws an exception if class is not `JsObject`.  Thus,
+the implementation of `JsValueOps` (instead of `JsObjectOps`) will be like:
+
+```Scala
+import scala.util.Try
+import spray.json.JsValue
+
+implicit class JsValueOps(val value: JsValue) extends AnyVal {
+  def /(name: String) =
+  JsFieldOps(Try(value.asJsObject).toOption.flatMap(_.fields.get(name)))
+}
+```
+
+And this is a complete implementation of simple DSL for querying values in
+`JsObject`s.
+
+P.S. there is a great library called
+[json-lenses](https://github.com/jrudolph/json-lenses) which provides more
+powerful way to query and update JSON objects.  It gives you objects called
+"lens", which encapsulate path through JSON object, and allows you to get and set
+values (of course set means create a modified object, because `JsObject` is
+immutable).
