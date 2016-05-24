@@ -1,14 +1,14 @@
 ---
-title: Little bit more about git cherry-pick
+title: A little bit more about git cherry-pick
 tags: git
 ---
 
 In [one of the previous posts](/posts/2015-12-16-Batch-cherry-picking-in-git.html)
-I told about a way to copy a bunch of commits from one git branch to another one.
-Today I did it again, but for the other reason.
+I talked about a way to copy a bunch of commits from one git branch to another one.
+Today had to copy commits again, but for a different reason.
 
 Several days ago I started a new project in a new repository.  I made several
-commits on `master` when I realized what I need to create a pull request to
+commits on my `master` branch when I realized that I needed to create a pull request to
 perform a code review.  What I had:
 
 ```
@@ -42,8 +42,8 @@ A -- B -- C -- D -- E                                          master
                         X                                      temp
 ```
 
-So there was two histories, not related with each other.  Next step was to
-create feature branch and copy commits there.
+So there were two histories, not related to each other.  The next step was to
+create a feature branch and copy the commits there.
 
 ```
 $ git checkout -b feature
@@ -51,8 +51,8 @@ $ git rev-list --reverse master | git cherry-pick --stdin
 $ git push -u origin feature
 ```
 
-Since it was an empty branch, there was no conflicts.  Another difference between
-this command and a command from the previous post, was what I didn't use a commit range,
+Because was an empty branch, there were no conflicts.  Another difference between
+this command and the command from the previous post, is that I didn't use a commit range,
 but a whole branch as an argument for the `rev-list` command. I was almost there:
 
 
