@@ -19,6 +19,10 @@ main = checkArgs <$> getArgs >>=
         route   idRoute
         compile compressCssCompiler
 
+    match "js/*" $ do
+        route   idRoute
+        compile copyFileCompiler
+
     match (fromList ["pages/about.md", "pages/404.md"]) $ do
         route   $ stripPages `composeRoutes` setExtension "html"
         compile $ pandocCompiler
