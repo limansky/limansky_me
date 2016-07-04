@@ -11,7 +11,7 @@ main :: IO ()
 main = checkArgs <$> getArgs >>=
         \(postsPattern, conf, args) -> withArgs args $ hakyllWith conf $ do
 
-    match "images/*" $ do
+    match "images/**" $ do
         route   idRoute
         compile copyFileCompiler
 
@@ -75,6 +75,7 @@ main = checkArgs <$> getArgs >>=
 
             makeItem ""
                 >>= loadAndApplyTemplate "templates/archive.html" archiveCtx
+                >>= loadAndApplyTemplate "templates/page.html" archiveCtx
                 >>= loadAndApplyTemplate "templates/default.html" archiveCtx
                 >>= relativizeUrls
 
