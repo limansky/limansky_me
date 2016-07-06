@@ -3,12 +3,12 @@ title: Scala type variance and Java collections
 tags: Scala, collections
 ---
 
-It's quite often when we need to use a Java API from Scala.  And it's really
+It's quite often that we need to use a Java API from Scala.  And these usages occurs even more
 often when you have modules written in Java in your Scala project.  The most
 common problem is to pass Java collections to Scala API and Scala collections
 to Java.  Fortunately, Scala library provides bidirectional implicit converters
 between Scala and Java collections.  There are two classes `JavaConverters` and
-`JavaConversions` which provide a same functionality but in the different way.
+`JavaConversions` which provide the same functionality but in a different way.
 
 Assume we have a Java service:
 
@@ -56,9 +56,9 @@ class ScalaService {
 ```
 
 And we have two different Message implementations in Java and in Scala, which
-are really simple (just a PoJo for Java and case class for Scala).
+are really simple (just a POJO for Java and a case class for Scala).
 
-Now let's try to `JavaConversions` gives you an implicit magic:
+Now let's try to use `JavaConversions`, which gives you an implicit magic:
 
 ```Scala
 import scala.collection.JavaConversions._
@@ -67,8 +67,8 @@ javaService.handleMessages(scalaService.generateMessages(3))
 scalaService.handleMessages(javaService.generateMessages(3))
 ```
 
-In contrast with `JavaConversions` `JavaConverters` require to specify what is
-need to be converted explicitly, using `asScala`, `asJava` or one of the other
+In contrast with `JavaConversions` `JavaConverters` require us to explicitly specify what
+needs to be converted explicitly, using `asScala`, `asJava` or one of the other
 methods:
 
 ```Scala
@@ -97,12 +97,12 @@ found: java.util.List[ScalaMessage]
 required: java.util.List[Message]
 ```
 
-What happen here? Why do we get a list of `ScalaMessage`s here?  Because Scala
-always tries to infer most precise type.  In this case it is
-`List[ScalaMessage]` because all list elements are `ScalaMessage`s.  When, why
-`ScalaService` takes it as a parameter without any error?  Even though these
+What happened here? Why did we get a list of `ScalaMessage`s here?  Because Scala
+always tries to infer the most precise type.  In this case it is
+`List[ScalaMessage]` because all list elements are `ScalaMessage`s.  Then, why
+did `ScalaService` take it as a parameter without any error?  Even though these
 methods signature looks same, there is a big difference in Scala and Java
-versions.  Scala list is covariant type.  This means that the list of subtypes
+versions.  Scala list is a covariant type.  This means that the list of subtypes
 of `Message` is a subtype of list of `Message`.  As result, we can use a
 `List[ScalaMessage]` as a `List[Message]`.
 
@@ -114,6 +114,6 @@ void handleMessages(List<? extends Message> messages)
 ```
 
 But what if it's a library method, or we don't want to change the method
-signature for some other reason?  And how `JavaConversions` manages to solve it?
+signature for some other reason?  And how does `JavaConversions` manage to solve it?
 
 The difference is in the type resolution.
