@@ -22,3 +22,4 @@ ul.recent-posts { padding-left: 10pt; }
 .sourceCode .diff span.ot { color: #189136; }
 
 a.btn.continue:hover { background-color: #0085A1; color: #ffffff; }
+.post-heading .tags a { color: #ffffff; text-decoration: underline; }

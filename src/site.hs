@@ -43,6 +43,7 @@ main = checkArgs <$> getArgs >>=
 
             makeItem ""
                 >>= loadAndApplyTemplate "templates/posts.html" ctx
+                >>= loadAndApplyTemplate "templates/page.html" ctx
                 >>= loadAndApplyTemplate "templates/default.html" ctx
                 >>= relativizeUrls
 
@@ -50,9 +51,8 @@ main = checkArgs <$> getArgs >>=
         route $ setExtension "html"
         compile $ pandocCompiler
             >>= saveSnapshot "content"
-            >>= loadAndApplyTemplate "templates/post.html" (postCtx tags)
             >>= loadAndApplyTemplate "templates/post-with-comment.html" defaultContext
-            >>= loadAndApplyTemplate "templates/right-column.html" (mainCtx tags)
+            >>= loadAndApplyTemplate "templates/post-right-column.html" (postCtx tags `mappend` mainCtx tags)
             >>= loadAndApplyTemplate "templates/default.html" defaultContext
             >>= relativizeUrls
 
@@ -90,7 +90,7 @@ main = checkArgs <$> getArgs >>=
 
             getResourceBody
                 >>= applyAsTemplate indexCtx
-                >>= loadAndApplyTemplate "templates/right-column.html" indexCtx
+                >>= loadAndApplyTemplate "templates/page-right-column.html" indexCtx
                 >>= loadAndApplyTemplate "templates/default.html" indexCtx
                 >>= relativizeUrls
 
