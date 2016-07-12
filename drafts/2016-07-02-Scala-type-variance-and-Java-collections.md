@@ -116,4 +116,22 @@ void handleMessages(List<? extends Message> messages)
 But what if it's a library method, or we don't want to change the method
 signature for some other reason?  And how does `JavaConversions` manage to solve it?
 
-The difference is in the type resolution.
+Let's check how does `JavaConvetions` work.  When Scala compiler find that an
+argument type is not compatible with required type, it tries to find an
+implicit conversion which can change type to the required one.  In our case the
+required type is a `java.util.List[Message]`, but the actual type is
+`scala.collections.List[ScalaMessage]`.  So, the compiler tries to find an
+implicit way to convert an actual type to expected one.  In our case it uses
+`seqAsJavaList` function from `JavaConvetions` which have following definition:
+
+```Scala
+implicit def seqAsJavaList[A](seq: Seq[A]): java.util.List[A]
+```
+
+This function has a required result type (`java.util.List[Message]`) and takes
+a `Seq[Message]` as an argument.  But the Scala `List` is derived from `Seq`,
+so we can pass the List to the places where Seq is required.  And, because
+`Seq` type parameter is covariant `List[ScalaMessage]` inherits `Seq[Message]`,
+and it can be passed to the `seqAsJavaList[Message]`.
+
+Now let's check the `JavaConverters` method, to understand why it doesn't work.
