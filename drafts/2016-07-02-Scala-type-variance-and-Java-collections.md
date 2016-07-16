@@ -1,7 +1,10 @@
 ---
 title: Scala type variance and Java collections
-tags: Scala, collections
+tags: Scala, collections, Java
 ---
+
+Converting Scala collections to Java and backward
+-------------------------------------------------
 
 It's quite often that we need to use a Java API from Scala.  And these usages occurs even more
 often when you have modules written in Java in your Scala project.  The most
@@ -78,6 +81,14 @@ javaService.handleMessages(scalaService.generateMessages(3).asJava)
 scalaService.handleMessages(javaService.generateMessages(3).asScala)
 ```
 
+What is the reason to have two classes providing similar functionality?  I
+think the `JavaConversions` gives you more simplicity.  But the
+`JavaConverters` gives you more control.  You can handle what's going on, what
+type do you pass to a Java code.
+
+The problem
+-----------
+
 Now, let's try this:
 
 ```Scala
@@ -135,3 +146,78 @@ so we can pass the List to the places where Seq is required.  And, because
 and it can be passed to the `seqAsJavaList[Message]`.
 
 Now let's check the `JavaConverters` method, to understand why it doesn't work.
+This class use another type of Scala implicit conversions.  When Scala compiler
+finds a method call of unknown method it tries to find a implicit conversion
+which will return a type with such method.
+In our case following implicit conversion is working:
+
+```Scala
+implicit def seqAsJavaListConverter[A](b : Seq[A]): AsJava[java.util.List[A]]
+```
+
+This method takes a sequence of type `A` and returns an instance of proxy class
+`AsJava` (as you might guess, it has `asJava` method) of Java list of same type
+`A`. In our case we have `AsJava[java.util.List[ScalaMessage]]`.  So, the
+result of the `asJava` call is a Java list of `ScalaMessage`,  which cannot be
+passed as a list of `Message` in Java.
+
+The solution
+------------
+
+Well, what we can do?
+
+1. We can just specify the type of `messages` variable:
+
+```Scala
+val messages: List[Message] = List("foo", "bar", "baz")
+  .map(s => ScalaMessage(s, LocalDateTime.now()))
+
+javaService.handleMessages(messages.asJava)
+```
+
+It works, but what if we'd like to inline it?
+
+```Scala
+javaService.handleMessages(List("foo", "bar", "baz")
+  .map(s => ScalaMessage(s, LocalDateTime.now())).asJava)
+```
+
+And we got the same error as previously.
+
+2. We can cast the result type:
+
+```Scala
+javaService.handleMessages(List("foo", "bar", "baz")
+  .map(s => ScalaMessage(s, LocalDateTime.now())).asInstanceOf[List[Message]].asJava)
+```
+
+It also works, but it looks ugly.
+
+3. We can try to write own converter. We will use an implicit class to wrap
+   `Seq[A]`.  This class will have a method `asJava[B]` which returns Java list
+   of `B`.  But we cannot just put instances of `A` in the collection of
+   arbitrary `B`.  But we don't need it.  We need only `B`s which are parents
+   of `A`. So the code is:
+
+```Scala
+object Converters {
+  implicit class AsJava[A](val a: Seq[A]) extends AnyVal {
+    def asJava[B >: A]: java.util.List[B] = {
+      import scala.collection.convert.WrapAsJava._
+      seqAsJavaList(a)
+    }
+  }
+}
+```
+
+And now our problem code is compiled:
+
+```Scala
+import Conveters._
+
+javaService.handleMessages(List("foo", "bar", "baz")
+  .map(s => ScalaMessage(s, LocalDateTime.now())).asJava)
+```
+
+We can specify type `B` explicitly (like `messages.asJava[Message]`), but the
+Scala implicit resolution is smart enough to infer required type itself.
