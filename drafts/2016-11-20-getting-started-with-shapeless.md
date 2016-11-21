@@ -128,7 +128,7 @@ trait SqlSaver[A] {
 This is quite straightforward thing.  We have type [A] and we can save it into
 statement. It takes an index as a parameter, and returns the next available
 index.  The other common thing is using of *summoner* or *materializer* method
-to be able to create instance in a way like `SqlSaver[Sale]`:
+to be able to create instance in a way like `val saver = SqlSaver[Sale]`:
 
 ```Scala
 object SqlSaver {
@@ -157,9 +157,10 @@ object SqlSaver {
 
   implicit val stringSaver: SqlSaver[String] = createSimpleSaver((a, s, i) => s.setString(i, a))
 
-  implicit val doubleSaver: SqlSaver[Double] = createSimpleSaver((a, s, i) => s.setDouble(i, a))
-
   implicit val intSaver: SqlSaver[Int] = createSimpleSaver((a, s, i) => s.setInt(i, a))
+
+  implicit val localDTSaver: SqlSaver[LocalDateTime] =
+    createSimpleSaver((a, s, i) => s.setTimestamp(i, Timestamp.valueOf(a)))
 
   implicit val bigDecimalSaver: SqlSaver[BigDecimal] = 
     createSimpleSaver((a, s, i) => s.setBigDecimal(i, a.underlying))
@@ -169,7 +170,7 @@ object SqlSaver {
 First of all let's create a helper functions `createSaver` and
 `createSimpleSaver` which construct `SqlSaver` instances (in the second one we
 assume that only one value is saved, so the next index is always equal the
-previous one plus one).  Then we create instances for strings, doubles,
+previous one plus one).  Then we create instances for strings, local dates,
 integers and big decimals.  Pretty straightforward, right?  Let's test that it
 works (I'm using ScalaTest with Mockito):
 
@@ -225,9 +226,17 @@ implicit def genericSaver[A, R](implicit
     createSaver((v, stm, idx) => saver.save(stm, idx)(gen.to(v))) 
 ```
 
-
+This thing has two type parameters. Type `A` is a data type we'd like to save.
+Type `R` is our `HList` type.  The `Generic.Aux` is a shorthand to write
+`Generic[A] { type Repr = R }`.  This Aux pattern is really common in shapeless
+and well described in this
+[post](http://gigiigig.github.io/posts/2015/09/13/aux-pattern.html).
+Generally, this pattern idea is to extract dependent type from parameterized
+type.  In our case `Generic.Repr` type depends on `Generic` type parameter `A`.
+There is only one type `R` corresponding to type `A`.
 
 Let's test it:
+
 ```Scala
 it should "save case classes" in {
   case class Sale(name: String, date: LocalDateTime, price: BigDecimal)
@@ -239,3 +248,11 @@ it should "save case classes" in {
   verify(stm).setBigDecimal(5, java.math.BigDecimal.valueOf(5.5))
 }
 ```
+
+## Summary
+
+We got expected behaviour with only 50 lines of code.  Even though this code
+looks quite ~~weird~~ difficult, it is quite straightforward, and once you
+understand it you will read easily.  I think it is simpler than the same
+feature implemented with macros.  Also it's really easy to extend:  the only
+thing you need to do is to write more implicits for your cases.
