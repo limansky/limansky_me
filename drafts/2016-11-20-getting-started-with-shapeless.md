@@ -5,10 +5,10 @@ tags: Scala, shapeless
 
 Sooner or later, every Scala programmer trying to study
 [shapeless](https://github.com/milessabin/shapeless),
-[Scalaz](https://github.com/scalaz/scalaz) or
+[Scalaz](https://github.com/scalaz/scalaz), [Cats](https://github.com/typelevel/cats) and
 other libraries, which are not designed to solve one small problem, but were
 created to ~~explode your brain~~ change the way you are writing your code, make
-it safer and at the same time more generic.  I tried to do it several times,
+it safer and at the same time more generic.  I've tried to do it several times,
 but the main problem is that there are no entry point.  There are lot of things
 and all of them are quite difficult.
 
@@ -20,8 +20,18 @@ first problem I'd like to solve is saving case class into a SQL statement. E.g:
 ```Scala
 case class Sale(name: String, date: LocalDateTime, price: BigDecimal)
 
-SqlSaver[Person].save(st, 1)(Person("Banana", LocalDateTime.now, 55))
+SqlSaver[Sale].save(st, 1)(Sale("Banana", LocalDateTime.now, 55))
 ```
+
+This call shall call prepared statement methods for each field taking in
+account the field type.  In this example it should be:
+
+```Scala
+st.setString(1, sale.name)
+st.setTimestamp(2, Timestamp.valueOf(sale.date))
+st.setBigDecimal(3, sale.price.underlying)
+```
+
 <!--more-->
 
 ## HLists
@@ -39,8 +49,8 @@ scala> val a = 5 :: "foo" :: false :: HNil : Int::String::Boolean::HNil
 a: shapeless.::[Int,shapeless.::[String,shapeless.::[Boolean,shapeless.HNil]]] = 5 :: foo :: false :: HNil
 ```
 
-It's obvious what any class can be represented as `HList`, and if the instance
-of `HList` has required *shape*, it can be converted back to class.
+It's obvious what any data class can be represented as `HList`, and if the instance
+of `HList` has required *shape*, it can be converted back to the class.
 Shapeless provides a converter back and forth called `Generic[T]`:
 
 ```Scala
@@ -98,8 +108,8 @@ def save[T](filename: String, data: T)(implicit ser: Serializable[T]) = {
 }
 ```
 
-Now the data decoupled from serialization.  We can have several was to
-serialize same data types.  And all of these ways can be implemented separately
+Now the data decoupled from serialization.  We can have several class type implementations
+for the same data type.  And all of them are implemented separately
 from data classes.  Thanks to implicit parameters, we still don't need to pass
 any additional parameters to `save` function.  From the caller side, the code
 is the same with the OOP inheritance.
