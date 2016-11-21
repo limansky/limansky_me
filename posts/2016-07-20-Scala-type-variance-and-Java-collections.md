@@ -127,13 +127,13 @@ void handleMessages(List<? extends Message> messages)
 But what if it's a library method, or we don't want to change the method
 signature for some other reason?  And how does `JavaConversions` manage to solve it?
 
-Let's check how does `JavaConvetions` work.  When Scala compiler find that an
-argument type is not compatible with required type, it tries to find an
-implicit conversion which can change type to the required one.  In our case the
+Let's check how `JavaConversions` works.  When the Scala compiler find that an
+argument type is not compatible with a required type, it tries to find an
+implicit conversion which can change that type to the required one.  In our case the
 required type is a `java.util.List[Message]`, but the actual type is
 `scala.collections.List[ScalaMessage]`.  So, the compiler tries to find an
-implicit way to convert an actual type to expected one.  In our case it uses
-`seqAsJavaList` function from `JavaConvetions` which have following definition:
+implicit way to convert the actual type to the expected one.  In this case it uses
+`seqAsJavaList` function from `JavaConversions` which have the following definition:
 
 ```Scala
 implicit def seqAsJavaList[A](seq: Seq[A]): java.util.List[A]
@@ -141,15 +141,15 @@ implicit def seqAsJavaList[A](seq: Seq[A]): java.util.List[A]
 
 This function has a required result type (`java.util.List[Message]`) and takes
 a `Seq[Message]` as an argument.  But the Scala `List` is derived from `Seq`,
-so we can pass the List to the places where Seq is required.  And, because
-`Seq` type parameter is covariant `List[ScalaMessage]` inherits `Seq[Message]`,
+so we can pass the List to the places where Seq is required.  `Seq` type
+parameter is covariant and because of that `List[ScalaMessage]` inherits `Seq[Message]`,
 and it can be passed to the `seqAsJavaList[Message]`.
 
 Now let's check the `JavaConverters` method, to understand why it doesn't work.
-This class use another type of Scala implicit conversions.  When Scala compiler
-finds a method call of unknown method it tries to find a implicit conversion
-which will return a type with such method.
-In our case following implicit conversion is working:
+This class uses another type of Scala implicit conversions.  When the Scala compiler
+finds a method call of unknown method it tries to find an implicit conversion
+which will return a type with this method.
+In our case following implicit conversion is used:
 
 ```Scala
 implicit def seqAsJavaListConverter[A](b : Seq[A]): AsJava[java.util.List[A]]
@@ -157,16 +157,16 @@ implicit def seqAsJavaListConverter[A](b : Seq[A]): AsJava[java.util.List[A]]
 
 This method takes a sequence of type `A` and returns an instance of proxy class
 `AsJava` (as you might guess, it has `asJava` method) of Java list of same type
-`A`. In our case we have `AsJava[java.util.List[ScalaMessage]]`.  So, the
+`A`. Here, we have `AsJava[java.util.List[ScalaMessage]]`.  So, the
 result of the `asJava` call is a Java list of `ScalaMessage`,  which cannot be
 passed as a list of `Message` in Java.
 
 The solution
 ------------
 
-Well, what we can do?
+Well, what can we do?
 
-1. We can just specify the type of `messages` variable:
+1. We can just specify type of the `messages` variable:
 
 ```Scala
 val messages: List[Message] = List("foo", "bar", "baz")
@@ -182,7 +182,7 @@ javaService.handleMessages(List("foo", "bar", "baz")
   .map(s => ScalaMessage(s, LocalDateTime.now())).asJava)
 ```
 
-And we got the same error as previously.
+And we get the same error as previously.
 
 2. We can cast the result type:
 
@@ -191,13 +191,13 @@ javaService.handleMessages(List("foo", "bar", "baz")
   .map(s => ScalaMessage(s, LocalDateTime.now())).asInstanceOf[List[Message]].asJava)
 ```
 
-It also works, but it looks ugly.
+This also works, but it looks ugly.
 
-3. We can try to write own converter. We will use an implicit class to wrap
+3. We can try to write our own converter. We will use an implicit class to wrap a
    `Seq[A]`.  This class will have a method `asJava[B]` which returns Java list
    of `B`.  But we cannot just put instances of `A` in the collection of
-   arbitrary `B`.  But we don't need it.  We need only `B`s which are parents
-   of `A`. So the code is:
+   arbitrary `B`.  Fortunately we don't need to do that.  We are interested only in `B`s 
+   which are parents of `A`, because such cast is always safe. So the code is:
 
 ```Scala
 object Converters {
@@ -219,5 +219,5 @@ javaService.handleMessages(List("foo", "bar", "baz")
   .map(s => ScalaMessage(s, LocalDateTime.now())).asJava)
 ```
 
-We can specify type `B` explicitly (like `messages.asJava[Message]`), but the
-Scala implicit resolution is smart enough to infer required type itself.
+We can specify the type `B` explicitly (like `messages.asJava[Message]`), but the
+Scala implicit resolution is smart enough to infer the required type itself.
