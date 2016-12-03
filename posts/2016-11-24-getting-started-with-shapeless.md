@@ -13,7 +13,7 @@ but the main problem is that there are no entry point.  There are a lot of thing
 and all of them are quite difficult.
 
 Finally I decided to solve some small problems with shapeless to find some patterns
-and scenarios of how to use it.  So, what kind of problems it I use?  Shapeless
+and scenarios of how to use it.  So, what kind of problems can I use?  Shapeless
 is really useful when you want to process your data in a type safe generic way.
 
 The problem I'd like to solve in this post is type safe saving arbitrary case
