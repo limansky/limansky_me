@@ -3,11 +3,11 @@ title: Fixing bugs in SqlSaver
 tags: Scala, shapeless
 ---
 
-In the [previous post](/2016-11-24-getting-started-with-shapeless.html) class
-`SqlSaver` was created.  To be honest, it's not very useful, and also has
+In the [previous post](/2016-11-24-getting-started-with-shapeless.html)
+`SqlSaver`class  was created.  Later, playing with it, I found that it has
 several bugs.
 
-I've found that it doesn't work properly with nested
+I've observed that it doesn't work properly with nested
 classes.  Let's start with the test:
 
 
@@ -31,24 +31,26 @@ it should "save nested case classes" in {
 Unfortunately it doesn't compile:
 
 ```
-[error] SqlSaverTest.scala:38: diverging implicit expansion for type SqlSaver[shapeless.::[java.time.LocalDateTime,shapeless.::[BigDecimal,shapeless.HNil]]]
+[error] SqlSaverTest.scala:38: diverging implicit expansion for type SqlSaver[LocalDateTime :: BigDecimal :: HNil]
 [error] starting with method hlistSaver in object SqlSaver
 [error]    SqlSaver[SaleRecord].save(stm, 6)(
 [error]            ^
 ```
 
+    Note: here and later I rewrote HLists into the infix form, for readability.
+
 <!--more-->
 
-That's strange.  We know that SqlSaver for `Foo` can be instantiated, because
-all `Foo` contains only fields of supported types.  Maybe sheless cannot
-construct generic for our nested classes? If we try to do it in REPR we get
-following result (I've rewritten result in the infix for for simplicity):
+That's strange.  We know that SqlSaver for `Sale` can be instantiated, because
+`Sale` contains only fields of supported types.  Maybe shapeless cannot
+construct `Generic` for our nested classes? If we try to do it in REPR we get
+following result:
 
 ```Scala
 Generic[SaleRecord]{type Repr = Int :: Sale :: String :: HNil }
 ```
 
-Even if we try to evaluate `SqlSaver[Int :: Sale :: String :: HNil]` we get a
+But if we try to evaluate `SqlSaver[Int :: Sale :: String :: HNil]` we get an
 error.  The problem we faced with is related to how Scala implicit resolution
 works.  This topic described in "The Type Astronaut's Guide to Shapeless".  The
 main idea is that Scala compiler tries to avoid infinite loops during implicit
@@ -58,8 +60,8 @@ complexity of type parameters is increasing for the type constructor it met
 before.  In shapeless one of the type constructors is `::[H, T]` -- the
 constructor of HList. In our case we get more complex HList for Sale than for
 SaleRecord, so it cannot find implicit `SqlSaver[Sale]` and doesn't compile.
-Fortunately shapeless has special type `Lazy` to solve this problem (else it
-would be quite useless thing).  Let's fix the second case:
+Fortunately shapeless has special type `Lazy` to solve this problem (else shapeless
+would be quite useless thing).  Let's fix the last error case:
 
 ```Scala
 implicit def hlistSaver[H, T <: HList](implicit
@@ -74,7 +76,7 @@ implicit def hlistSaver[H, T <: HList](implicit
 
 Once we wrapped the `hSaver` in `Lazy` it prevents the compiler to be too
 clever, and postpone implicit parameter evaluation to runtime.  Now the
-`SqlSaver` for HList is working properly.  We can fix the `genericSaver` in the
+`SqlSaver` for HList works properly.  We can fix the `genericSaver` in the
 same way, wrapping `saver` into `Lazy`:
 
 ```Scala
@@ -85,8 +87,8 @@ implicit def genericSaver[A, R](implicit
     createSaver((v, stm, idx) => saver.value.save(stm, idx)(gen.to(v)))
 ```
 
-Now the test compile successfully and fails on runtime with "9 did not equal
-11". What's happen? Current implementation of HList saver assume that the head
+Now the test compiles successfully but fails on runtime with "9 did not equal
+11" message. What's happen? Current implementation of HList saver assume that the head
 saver takes only one element.  This worked for primitive types, but of course
 doesn't work for classes.  To fix that we need to use next index returned by
 `hSaver`:
