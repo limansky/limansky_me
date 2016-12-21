@@ -1,8 +1,9 @@
 --------------------------------------------------------------------------------
 {-# LANGUAGE OverloadedStrings #-}
 import Control.Applicative ((<$>))
+import Control.Monad (liftM)
 import Data.List (partition)
-import Data.Monoid (mappend, (<>))
+import Data.Monoid ((<>))
 import System.Environment (getArgs, withArgs)
 import Hakyll
 
@@ -32,6 +33,8 @@ main = checkArgs <$> getArgs >>=
 
     tags <- buildTags postsPattern (fromCapture "tags/*.html")
 
+    paginate <- buildPaginateWith postsGrouper postsPattern makePageId
+
     tagsRules tags $ \tag pattern -> do
         let title = "Posts tagged " ++ tag
         route stripPages
@@ -52,14 +55,14 @@ main = checkArgs <$> getArgs >>=
         compile $ pandocCompiler
             >>= saveSnapshot "content"
             >>= loadAndApplyTemplate "templates/post-with-comment.html" defaultContext
-            >>= loadAndApplyTemplate "templates/post-right-column.html" (postCtx tags `mappend` mainCtx tags postsPattern)
+            >>= loadAndApplyTemplate "templates/post-right-column.html" (postCtx tags <> mainCtx tags postsPattern)
             >>= loadAndApplyTemplate "templates/default.html" defaultContext
             >>= relativizeUrls
 
     create ["atom.xml"] $ do
         route idRoute
         compile $ do
-            let feedCtx = (postCtx tags) `mappend` bodyField "description"
+            let feedCtx = (postCtx tags) <> bodyField "description"
             posts <- fmap (take 10) . recentFirst =<<
                 loadAllSnapshots postsPattern "content"
             renderAtom feedCfg feedCtx posts
@@ -69,8 +72,8 @@ main = checkArgs <$> getArgs >>=
         compile $ do
             posts <- recentFirst =<< loadAll postsPattern
             let archiveCtx =
-                    listField "posts" (postCtx tags) (return posts) `mappend`
-                    constField "title" "Archives"            `mappend`
+                    listField "posts" (postCtx tags) (return posts) <>
+                    constField "title" "Archives"            <>
                     defaultContext
 
             makeItem ""
@@ -80,16 +83,22 @@ main = checkArgs <$> getArgs >>=
                 >>= relativizeUrls
 
 
-    match "pages/index.html" $ do
+    -- match "pages/index.html" $ do
+    --
+    paginateRules paginate $ \page pattern -> do
         route stripPages
         compile $ do
-            posts <- recentFirst =<< loadAllSnapshots postsPattern "content"
-            let indexCtx =
-                    listField "posts" (previewCtx tags) (return posts) `mappend`
+            posts <- recentFirst =<< loadAllSnapshots pattern "content"
+            let pagedCtx = paginateContext paginate page
+                indexCtx =
+                    constField "title" (if page == 1 then "Latest blog posts" else "Blog posts, page " ++ show page) <>
+                    listField "posts" (previewCtx tags) (return posts) <>
+                    pagedCtx <>
                     mainCtx tags postsPattern
 
-            getResourceBody
+            makeItem ""
                 >>= applyAsTemplate indexCtx
+                >>= loadAndApplyTemplate "templates/posts-preview-list.html" indexCtx
                 >>= loadAndApplyTemplate "templates/page-right-column.html" indexCtx
                 >>= loadAndApplyTemplate "templates/default.html" indexCtx
                 >>= relativizeUrls
@@ -103,18 +112,18 @@ stripPages = gsubRoute "pages/" $ const ""
 mainCtx :: Tags -> Pattern -> Context String
 mainCtx tags postsPattern =
     let recentPosts = postItems postsPattern >>= fmap (take 5) . recentFirst in
-      listField "recentPosts" (previewCtx tags) recentPosts `mappend`
-      tagCloudField "tagCloud" 75 200 tags `mappend`
+      listField "recentPosts" (previewCtx tags) recentPosts <>
+      tagCloudField "tagCloud" 75 200 tags <>
       defaultContext
 
 postCtx :: Tags -> Context String
 postCtx tags =
-    dateField "date" "%B %e, %Y" `mappend`
-    tagsField "tags" tags `mappend`
+    dateField "date" "%B %e, %Y" <>
+    tagsField "tags" tags <>
     defaultContext
 
 previewCtx :: Tags -> Context String
-previewCtx tags = teaserField "preview" "content" `mappend` postCtx tags
+previewCtx tags = teaserField "preview" "content" <> postCtx tags
 
 feedCfg :: FeedConfiguration
 feedCfg = FeedConfiguration
@@ -141,3 +150,9 @@ postItems :: Pattern ->  Compiler [Item String]
 postItems postsPattern = do
     identifiers <- getMatches postsPattern
     return [Item identifier "" | identifier <- identifiers]
+
+postsGrouper :: MonadMetadata m => [Identifier] -> m [[Identifier]]
+postsGrouper ids = liftM (paginateEvery 5) . sortRecentFirst $ ids
+
+makePageId :: PageNumber -> Identifier
+makePageId n = fromFilePath $ if (n == 1) then "index.html" else show n ++ "/index.html"
