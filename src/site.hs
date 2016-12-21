@@ -52,7 +52,7 @@ main = checkArgs <$> getArgs >>=
         compile $ pandocCompiler
             >>= saveSnapshot "content"
             >>= loadAndApplyTemplate "templates/post-with-comment.html" defaultContext
-            >>= loadAndApplyTemplate "templates/post-right-column.html" (postCtx tags `mappend` mainCtx tags)
+            >>= loadAndApplyTemplate "templates/post-right-column.html" (postCtx tags `mappend` mainCtx tags postsPattern)
             >>= loadAndApplyTemplate "templates/default.html" defaultContext
             >>= relativizeUrls
 
@@ -86,7 +86,7 @@ main = checkArgs <$> getArgs >>=
             posts <- recentFirst =<< loadAllSnapshots postsPattern "content"
             let indexCtx =
                     listField "posts" (previewCtx tags) (return posts) `mappend`
-                    mainCtx tags
+                    mainCtx tags postsPattern
 
             getResourceBody
                 >>= applyAsTemplate indexCtx
@@ -100,9 +100,9 @@ main = checkArgs <$> getArgs >>=
 --------------------------------------------------------------------------------
 stripPages = gsubRoute "pages/" $ const ""
 
-mainCtx :: Tags -> Context String
-mainCtx tags =
-    let recentPosts = postItems >>= fmap (take 5) . recentFirst in
+mainCtx :: Tags -> Pattern -> Context String
+mainCtx tags postsPattern =
+    let recentPosts = postItems postsPattern >>= fmap (take 5) . recentFirst in
       listField "recentPosts" (previewCtx tags) recentPosts `mappend`
       tagCloudField "tagCloud" 75 200 tags `mappend`
       defaultContext
@@ -137,7 +137,7 @@ checkArgs args = case partition (/= "--with-drafts") args of
       , tmpDirectory = "_draftCache/tmp"
       }
 
-postItems :: Compiler [Item String]
-postItems = do
-    identifiers <- getMatches "posts/*"
+postItems :: Pattern ->  Compiler [Item String]
+postItems postsPattern = do
+    identifiers <- getMatches postsPattern
     return [Item identifier "" | identifier <- identifiers]
