@@ -30,6 +30,9 @@ $endfor$
           <span aria-hidden="true">&laquo;</span>
         </a>
     </li>
+    $for(postsBefore)$
+    <li><a href="$pageUrl$">$pageNum$</a></li>
+    $endfor$
     <li class="active">
       <a href="#">$currentPageNum$<span class="sr-only">current</span></a>
     </li>

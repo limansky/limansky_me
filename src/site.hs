@@ -3,6 +3,7 @@
 import Control.Applicative ((<$>))
 import Control.Monad (liftM)
 import Data.List (partition)
+import qualified Data.Map as M
 import Data.Monoid ((<>))
 import System.Environment (getArgs, withArgs)
 import Hakyll
@@ -89,7 +90,7 @@ main = checkArgs <$> getArgs >>=
         route stripPages
         compile $ do
             posts <- recentFirst =<< loadAllSnapshots pattern "content"
-            let pagedCtx = paginateContext paginate page
+            let pagedCtx = paginateContextPlus paginate page
                 indexCtx =
                     constField "title" (if page == 1 then "Latest blog posts" else "Blog posts, page " ++ show page) <>
                     listField "posts" (previewCtx tags) (return posts) <>
@@ -156,3 +157,16 @@ postsGrouper ids = liftM (paginateEvery 5) . sortRecentFirst $ ids
 
 makePageId :: PageNumber -> Identifier
 makePageId n = fromFilePath $ if (n == 1) then "index.html" else show n ++ "/index.html"
+
+paginateContextPlus :: Paginate -> PageNumber -> Context a
+paginateContextPlus pag currentPage = paginateContext pag currentPage <> mconcat
+    [ listField "postsBefore" linkCtx pagesBefore
+    , listField "postsAfter"  linkCtx pagesAfter
+    ]
+    where
+        linkCtx = field "pageNum" (return . fst . itemBody) <> field "pageUrl" (return . snd . itemBody)
+        lastPage = M.size . paginateMap $ pag
+        pageInfo n = let i = paginateMakeId pag n in makeItem (show n, i)
+        pages = [pageInfo n | n <- [1..lastPage], n /= currentPage]
+        -- pagesBefore = sequence [ makeItem ("bbb", "ccc")]
+        (pagesBefore, pagesAfter) = let (b, a) = span ((< currentPage) . fst) pages in (sequence b, sequence a)
