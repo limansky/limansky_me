@@ -14,3 +14,43 @@ $for(posts)$
             $body$
         $endif$
 $endfor$
+
+<nav aria-label="Page navigation">
+  <ul class="pagination">
+    $if(previousPageNum)$
+    <li>
+    $else$
+    <li class="disabled">
+    $endif$
+      $if(previousPageNum)$
+        <a href="$previousPageUrl$">
+      $else$
+        <a href="#">
+      $endif$
+          <span aria-hidden="true">&laquo;</span>
+        </a>
+    </li>
+    $for(postsBefore)$
+    <li><a href="$pageUrl$">$pageNum$</a></li>
+    $endfor$
+    <li class="active">
+      <a href="#">$currentPageNum$<span class="sr-only">current</span></a>
+    </li>
+    $for(postsAfter)$
+    <li><a href="$pageUrl$">$pageNum$</a></li>
+    $endfor$
+    $if(nextPageNum)$
+    <li>
+    $else$
+    <li class="disabled">
+    $endif$
+      $if(nextPageNum)$
+        <a href="$nextPageUrl$">
+      $else$
+        <a href="#">
+      $endif$
+          <span aria-hidden="true">&raquo;</span>
+        </a>
+    </li>
+  </ui>
+</nav>
