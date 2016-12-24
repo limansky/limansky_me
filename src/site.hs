@@ -34,11 +34,9 @@ main = checkArgs <$> getArgs >>=
 
     tags <- buildTags postsPattern (fromCapture "tags/*.html")
 
-    paginate <- buildPaginateWith postsGrouper postsPattern makePageId
-
     tagsRules tags $ \tag pattern -> do
         let title = "Posts tagged " ++ tag
-        route stripPages
+        route idRoute
         compile $ do
             posts <- recentFirst =<< loadAll pattern
             let ctx = constField "title" title <>
@@ -84,10 +82,10 @@ main = checkArgs <$> getArgs >>=
                 >>= relativizeUrls
 
 
-    -- match "pages/index.html" $ do
-    --
+    paginate <- buildPaginateWith postsGrouper postsPattern postsPageId
+
     paginateRules paginate $ \page pattern -> do
-        route stripPages
+        route idRoute
         compile $ do
             posts <- recentFirst =<< loadAllSnapshots pattern "content"
             let pagedCtx = paginateContextPlus paginate page
@@ -153,26 +151,27 @@ postItems postsPattern = do
     return [Item identifier "" | identifier <- identifiers]
 
 postsGrouper :: MonadMetadata m => [Identifier] -> m [[Identifier]]
-postsGrouper ids = liftM (paginateEvery 10) . sortRecentFirst $ ids
+postsGrouper = liftM (paginateEvery 10) . sortRecentFirst
 
-makePageId :: PageNumber -> Identifier
-makePageId n = fromFilePath $ if (n == 1) then "index.html" else show n ++ "/index.html"
+postsPageId :: PageNumber -> Identifier
+postsPageId n = fromFilePath $ if (n == 1) then "index.html" else show n ++ "/index.html"
 
 paginateContextPlus :: Paginate -> PageNumber -> Context a
 paginateContextPlus pag currentPage = paginateContext pag currentPage <> mconcat
-    [ listField "postsBefore" linkCtx $ wrapPages pagesBefore
-    , listField "postsAfter"  linkCtx $ wrapPages pagesAfter
+    [ listField "pagesBefore" linkCtx $ wrapPages pagesBefore
+    , listField "pagesAfter"  linkCtx $ wrapPages pagesAfter
     ]
     where
-        linkCtx = field "pageNum" (return . fst . itemBody) <> field "pageUrl" (return . snd . itemBody)
+        linkCtx = field "pageNum" (return . fst . itemBody) <>
+                  field "pageUrl" (return . snd . itemBody)
         lastPage = M.size . paginateMap $ pag
         pageInfo n = (n, paginateMakeId pag n)
 
         pages = [pageInfo n | n <- [1..lastPage], n /= currentPage]
         (pagesBefore, pagesAfter) = span ((< currentPage) . fst) pages
 
-        wrapPages :: [(PageNumber, Identifier)] -> Compiler [Item (String, String)]
-        wrapPages = sequence . map (\(n, i) -> url n i >>= makeItem)
-        url n i = getRoute i >>= \mbR -> case mbR of
-            Just r  -> return (show n, toUrl r)
+        wrapPages = sequence . map makeInfoItem
+
+        makeInfoItem (n, i) = getRoute i >>= \mbR -> case mbR of
+            Just r  -> makeItem (show n, toUrl r)
             Nothing -> fail $ "No URL for page: " ++ show n

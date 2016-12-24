@@ -30,13 +30,13 @@ $endfor$
           <span aria-hidden="true">&laquo;</span>
         </a>
     </li>
-    $for(postsBefore)$
+    $for(pagesBefore)$
     <li><a href="$pageUrl$">$pageNum$</a></li>
     $endfor$
     <li class="active">
       <a href="#">$currentPageNum$<span class="sr-only">current</span></a>
     </li>
-    $for(postsAfter)$
+    $for(pagesAfter)$
     <li><a href="$pageUrl$">$pageNum$</a></li>
     $endfor$
     $if(nextPageNum)$
