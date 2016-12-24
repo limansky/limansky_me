@@ -36,6 +36,9 @@ $endfor$
     <li class="active">
       <a href="#">$currentPageNum$<span class="sr-only">current</span></a>
     </li>
+    $for(postsAfter)$
+    <li><a href="$pageUrl$">$pageNum$</a></li>
+    $endfor$
     $if(nextPageNum)$
     <li>
     $else$

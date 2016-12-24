@@ -153,20 +153,26 @@ postItems postsPattern = do
     return [Item identifier "" | identifier <- identifiers]
 
 postsGrouper :: MonadMetadata m => [Identifier] -> m [[Identifier]]
-postsGrouper ids = liftM (paginateEvery 5) . sortRecentFirst $ ids
+postsGrouper ids = liftM (paginateEvery 10) . sortRecentFirst $ ids
 
 makePageId :: PageNumber -> Identifier
 makePageId n = fromFilePath $ if (n == 1) then "index.html" else show n ++ "/index.html"
 
 paginateContextPlus :: Paginate -> PageNumber -> Context a
 paginateContextPlus pag currentPage = paginateContext pag currentPage <> mconcat
-    [ listField "postsBefore" linkCtx pagesBefore
-    , listField "postsAfter"  linkCtx pagesAfter
+    [ listField "postsBefore" linkCtx $ wrapPages pagesBefore
+    , listField "postsAfter"  linkCtx $ wrapPages pagesAfter
     ]
     where
         linkCtx = field "pageNum" (return . fst . itemBody) <> field "pageUrl" (return . snd . itemBody)
         lastPage = M.size . paginateMap $ pag
-        pageInfo n = let i = paginateMakeId pag n in makeItem (show n, i)
+        pageInfo n = (n, paginateMakeId pag n)
+
         pages = [pageInfo n | n <- [1..lastPage], n /= currentPage]
-        -- pagesBefore = sequence [ makeItem ("bbb", "ccc")]
-        (pagesBefore, pagesAfter) = let (b, a) = span ((< currentPage) . fst) pages in (sequence b, sequence a)
+        (pagesBefore, pagesAfter) = span ((< currentPage) . fst) pages
+
+        wrapPages :: [(PageNumber, Identifier)] -> Compiler [Item (String, String)]
+        wrapPages = sequence . map (\(n, i) -> url n i >>= makeItem)
+        url n i = getRoute i >>= \mbR -> case mbR of
+            Just r  -> return (show n, toUrl r)
+            Nothing -> fail $ "No URL for page: " ++ show n
