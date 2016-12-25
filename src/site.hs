@@ -88,11 +88,11 @@ main = checkArgs <$> getArgs >>=
         route idRoute
         compile $ do
             posts <- recentFirst =<< loadAllSnapshots pattern "content"
-            let pagedCtx = paginateContextPlus paginate page
-                indexCtx =
-                    constField "title" (if page == 1 then "Latest blog posts" else "Blog posts, page " ++ show page) <>
+            let indexCtx =
+                    constField "title" (if page == 1 then "Latest blog posts"
+                                                     else "Blog posts, page " ++ show page) <>
                     listField "posts" (previewCtx tags) (return posts) <>
-                    pagedCtx <>
+                    paginateContextPlus paginate page <>
                     mainCtx tags postsPattern
 
             makeItem ""

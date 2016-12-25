@@ -22,13 +22,13 @@ $endfor$
     $else$
     <li class="disabled">
     $endif$
-      $if(previousPageNum)$
-        <a href="$previousPageUrl$">
-      $else$
-        <a href="#">
-      $endif$
-          <span aria-hidden="true">&laquo;</span>
-        </a>
+    $if(previousPageNum)$
+      <a href="$previousPageUrl$">
+    $else$
+      <a href="#">
+    $endif$
+        <span aria-hidden="true">&laquo;</span>
+      </a>
     </li>
     $for(pagesBefore)$
     <li><a href="$pageUrl$">$pageNum$</a></li>
@@ -44,13 +44,13 @@ $endfor$
     $else$
     <li class="disabled">
     $endif$
-      $if(nextPageNum)$
-        <a href="$nextPageUrl$">
-      $else$
-        <a href="#">
-      $endif$
-          <span aria-hidden="true">&raquo;</span>
-        </a>
+    $if(nextPageNum)$
+      <a href="$nextPageUrl$">
+    $else$
+      <a href="#">
+    $endif$
+        <span aria-hidden="true">&raquo;</span>
+      </a>
     </li>
   </ui>
 </nav>
