@@ -73,7 +73,33 @@ configurations depending on command line parameters (see [Draft posts with
 Hakyll](/posts/2015-10-31-Draft-posts-with-Hakyll.html) post).
 
 Once we obtain a `Paginate` instance we can generate content using
-`paginateRules` function. 
+`paginateRules` function.  This function takes an instance of `Paginate` as a
+parameter and a function with following signature `PageNumber -> Pattern ->
+Rules()` as a second parameter.
+
+```Haskell
+    paginateRules paginate $ \page pattern -> do
+        route idRoute
+        compile $ do
+            posts <- recentFirst =<< loadAllSnapshots pattern "content"
+            let indexCtx =
+                    constField "title" (if page == 1 then "Latest blog posts"
+                                                     else "Blog posts, page " ++ show page) <>
+                    listField "posts" (previewCtx tags) (return posts) <>
+                    paginateContextPlus paginate page <>
+                    mainCtx tags postsPattern
+
+            makeItem ""
+                >>= applyAsTemplate indexCtx
+                >>= loadAndApplyTemplate "templates/posts-preview-list.html" indexCtx
+                >>= loadAndApplyTemplate "templates/page-right-column.html" indexCtx
+                >>= loadAndApplyTemplate "templates/default.html" indexCtx
+                >>= relativizeUrls
+```
+
+Hakyll provides function `paginateContext` which returns a context with a
+number of fields for specific page.  As I said before, this is not enough for
+me, so I'm using `paginateContextPlus`, which is defined in the next section.
 
 ## Extending paginate context
 
@@ -93,11 +119,12 @@ paginateContextPlus pag currentPage = paginateContext pag currentPage <> mconcat
     where
 ```
 
-I decided to include `paginateContext` into the result of this function.  Since
+I included `paginateContext` into the result of this function.  Since
 we need a lists of pages, we need to use `listField` function to create
 contexts.  We need to create nested contexts for list elements:
 
 ```Haskell
+        linkCtx :: Context (String, String)
         linkCtx = field "pageNum" (return . fst . itemBody) <>
                   field "pageUrl" (return . snd . itemBody)
 ```
@@ -131,3 +158,55 @@ Now, map a list with `makeInfoItem`:
         wrapPages :: [(PageNumber, Identifier)] -> Compiler [Item (String, String)]
         wrapPages = sequence . map makeInfoItem
 ```
+
+## Template
+
+Now, when we have all required variables in the context, it is simple to add
+paginator to the template:
+
+```html
+<nav aria-label="Page navigation">
+  <ul class="pagination">
+    $if(previousPageNum)$
+    <li>
+    $else$
+    <li class="disabled">
+    $endif$
+    $if(previousPageNum)$
+      <a href="$previousPageUrl$">
+    $else$
+      <a href="#">
+    $endif$
+        <span aria-hidden="true">&laquo;</span>
+      </a>
+    </li>
+    $for(pagesBefore)$
+    <li><a href="$pageUrl$">$pageNum$</a></li>
+    $endfor$
+    <li class="active">
+      <a href="#">$currentPageNum$<span class="sr-only">current</span></a>
+    </li>
+    $for(pagesAfter)$
+    <li><a href="$pageUrl$">$pageNum$</a></li>
+    $endfor$
+    $if(nextPageNum)$
+    <li>
+    $else$
+    <li class="disabled">
+    $endif$
+    $if(nextPageNum)$
+      <a href="$nextPageUrl$">
+    $else$
+      <a href="#">
+    $endif$
+        <span aria-hidden="true">&raquo;</span>
+      </a>
+    </li>
+  </ui>
+</nav>
+```
+
+It is required to check if the previous/next page variables are defined,
+because they are not defined on the first/last page.
+
+And that's all.
