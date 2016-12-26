@@ -4,30 +4,34 @@ tags: Hakyll, Haskell
 ---
 
 Yesterday I found that there are more than ten posts in my blog. Not so many
-for more that year, but quite a lot for the index page.  The simplest solution
+for more than year, but quite a lot for the index page.  The simplest solution
 is just limit amount of posts with `take` function, and write something like
 "more posts in the [archives](/archive.html)".  But I prefer to have pagination
-for the index page.  Hakyll has built-in support for pagination in module
-[Hakyll.Web.Paginate](https://jaspervdj.be/hakyll/reference/Hakyll-Web-Paginate.html)
-and perfect manual how to use it in this [blog
+for the index page.  Hakyll has built-in support for pagination in the module
+[Hakyll.Web.Paginate](https://jaspervdj.be/hakyll/reference/Hakyll-Web-Paginate.html).
+There is a very nice manual how to use it in this [blog
 post](https://dannysu.com/2015/10/29/hakyll-pagination/).
 
-Unfortunately, it provides only first/previous/current/next/last functionality.
+Unfortunately, Paginate provides only first/previous/current/next/last functionality.
 It's quite common to have only "Older posts" and "Newer posts" buttons for
 blogs, but I'd like to have a list of all pages in the Bootstrap pagination
-component.  So, it requires for some more Haskell coding.
+component.  So, it's time to write some Haskell code (of course you need to
+write code to add standard Paginate, but I'm going to write a little bit more).
 
 <!--more-->
 
 ## Generating paginated pages
 
+Let's setup basic Paginate and then extend it. If you are already familiar
+with Paginate, you can skip this section.
+
 The data type `Paginate` holds mapping from page numbers to `Identifier`s. The
 `buildPaginateWith` function is used to create `Paginate` instances.  This
 function has three parameters:
 
-- grouper -- is a function to group list of `Identifier`s into chunks
-- pattern -- is a `Pattern` to get required items
-- makeId -- function to convert page number to `Identifier`
+- grouper -- is a function to group list of `Identifier`s into chunks.
+- pattern -- is a `Pattern` instance to get required items.
+- makeId -- function to map page numbers to `Identifier`s.
 
 Let start with `makeId` as a simplest one:
 
@@ -36,8 +40,8 @@ postsPageId :: PageNumber -> Identifier
 postsPageId n = fromFilePath $ if (n == 1) then "index.html" else show n ++ "/index.html"
 ```
 
-Pretty straightforward, right? It creates `Identifier` from file path. If it's
-the first page, the path is just an "index.html", else it should take
+Pretty straightforward, right? It creates an `Identifier` from file path. If it's
+the first page, the path is just "index.html", else it should take
 index.html file from the folder named with a page number. E.g. "2/index.html".
 
 The grouper has following signature:
@@ -47,8 +51,8 @@ postsGrouper :: MonadMetadata m => [Identifier] -> m [[Identifier]]
 ```
 
 Hakyll provides `paginateEvery` function which takes a list and groups it in
-chunks of specified number of items.  Another useful function is
-`sortRecentFirst` which sorts list of `Identifier`s.  So, we need to sort the
+chunks of specified number of elements.  Another useful function is
+`sortRecentFirst` which sorts list of `Identifier`s.  So, we need to sort a
 list of identifiers and then paginate it.  To do that, we need to lift the
 `paginateEvery` function to the `MonadMetadata` monad.
 
@@ -59,7 +63,7 @@ postsGrouper :: MonadMetadata m => [Identifier] -> m [[Identifier]]
 postsGrouper = liftM (paginateEvery 10) . sortRecentFirst 
 ```
 
-Now we can build paginate instance:
+Now we can build a paginate instance:
 
 ```Haskell
 main = checkArgs <$> getArgs >>=
@@ -68,7 +72,7 @@ main = checkArgs <$> getArgs >>=
     paginate <- buildPaginateWith postsGrouper postsPattern postsPageId
 ```
 
-In simple case `postsPattern` can be just string "posts/ * ", but I use different
+In the simple case `postsPattern` can be just string `"posts/*"`, but I use different
 configurations depending on command line parameters (see [Draft posts with
 Hakyll](/posts/2015-10-31-Draft-posts-with-Hakyll.html) post).
 
