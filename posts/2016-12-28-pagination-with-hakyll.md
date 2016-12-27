@@ -107,10 +107,10 @@ me, so I'm using `paginateContextPlus`, which is defined in the next section.
 
 ## Extending paginate context
 
-To create paginator I need a list of all pages, and a current page.  Since it
+To create paginator I need a list of all pages, and a current page.  Since it is
 not possible to perform equality check inside the template, I decided to split
-the list of pages to two parts: pages before current, and pages after current.
-Let's write a function which will create context with this fields:
+the list of pages into two parts: pages before the current one, and pages after it.
+Let's write a function which will create a context with this fields:
 
 ```Haskell
 import qualified Data.Map as M
@@ -125,7 +125,7 @@ paginateContextPlus pag currentPage = paginateContext pag currentPage <> mconcat
 
 I included `paginateContext` into the result of this function.  Since
 we need a lists of pages, we need to use `listField` function to create
-contexts.  We need to create nested contexts for list elements:
+contexts.  We need to create nested contexts for the list elements:
 
 ```Haskell
         linkCtx :: Context (String, String)
@@ -133,7 +133,7 @@ contexts.  We need to create nested contexts for list elements:
                   field "pageUrl" (return . snd . itemBody)
 ```
 
-Now we need to get the information about each page except current and split the
+Next step is to get the information about each page except current and split the
 list of the pages into the two parts:
 
 ```Haskell
@@ -162,6 +162,9 @@ Now, map a list with `makeInfoItem`:
         wrapPages :: [(PageNumber, Identifier)] -> Compiler [Item (String, String)]
         wrapPages = sequence . map makeInfoItem
 ```
+
+Since `Compiler` is a monad, we can convert lift of `Compiler`s to the
+`Compiler` of list.
 
 ## Template
 
