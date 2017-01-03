@@ -3,56 +3,56 @@ title: Pagination with Hakyll
 tags: Hakyll, Haskell
 ---
 
-Yesterday I found that there are more than ten posts in my blog. Not so many
-for more than year, but quite a lot for the index page.  The simplest solution
-is just limit amount of posts with `take` function, and write something like
+Yesterday I realized that there are more than ten posts in my blog. Not so many
+for more than a year, but quite a lot for the index page.  The simplest solution
+is to just limit amount of posts with `take` function, and write something like
 "more posts in the [archives](/archive.html)".  But I prefer to have pagination
 for the index page.  Hakyll has built-in support for pagination in the module
 [Hakyll.Web.Paginate](https://jaspervdj.be/hakyll/reference/Hakyll-Web-Paginate.html).
-There is a very nice manual how to use it in this [blog
+There is a very nice manual about how to use it in this [blog
 post](https://dannysu.com/2015/10/29/hakyll-pagination/).
 
 Unfortunately, Paginate provides only first/previous/current/next/last functionality.
 It's quite common to have only "Older posts" and "Newer posts" buttons for
 blogs, but I'd like to have a list of all pages in the Bootstrap pagination
 component.  So, it's time to write some Haskell code (of course you need to
-write code to add standard Paginate, but I'm going to write a little bit more).
+write code to add the standard Paginate, but I'm going to write a little bit more).
 
 <!--more-->
 
 ## Generating paginated pages
 
-Let's setup basic Paginate and then extend it. If you are already familiar
+Let's set up basic Paginate and then extend it. If you are already familiar
 with Paginate, you can skip this section.
 
 The data type `Paginate` holds mapping from page numbers to `Identifier`s. The
 `buildPaginateWith` function is used to create `Paginate` instances.  This
 function has three parameters:
 
-- grouper -- is a function to group list of `Identifier`s into chunks.
-- pattern -- is a `Pattern` instance to get required items.
-- makeId -- function to map page numbers to `Identifier`s.
+- grouper -- a function to group a list of `Identifier`s into chunks
+- pattern -- a `Pattern` instance to get required items
+- makeId -- a function to map page numbers to `Identifier`s
 
-Let start with `makeId` as a simplest one:
+Let start with `makeId` as the simplest one:
 
 ```Haskell
 postsPageId :: PageNumber -> Identifier
 postsPageId n = fromFilePath $ if (n == 1) then "index.html" else show n ++ "/index.html"
 ```
 
-Pretty straightforward, right? It creates an `Identifier` from file path. If it's
-the first page, the path is just "index.html", else it should take
-index.html file from the folder named with a page number. E.g. "2/index.html".
+Pretty straightforward, right? It creates an `Identifier` from the file path. If it's
+the first page, the path is just "index.html", otherwise it should take
+"index.html" file from the folder named with a page number, e.g. "2/index.html".
 
-The grouper has following signature:
+The grouper has the following signature:
 
 ```Haskell
 postsGrouper :: MonadMetadata m => [Identifier] -> m [[Identifier]]
 ```
 
-Hakyll provides `paginateEvery` function which takes a list and groups it in
-chunks of specified number of elements.  Another useful function is
-`sortRecentFirst` which sorts list of `Identifier`s.  So, we need to sort a
+Hakyll provides the `paginateEvery` function which takes a list and groups it into
+chunks of a specified number of elements.  Another useful function is
+`sortRecentFirst`, which sorts a list of `Identifier`s.  So, we need to sort a
 list of identifiers and then paginate it.  To do that, we need to lift the
 `paginateEvery` function to the `MonadMetadata` monad.
 
@@ -63,7 +63,7 @@ postsGrouper :: MonadMetadata m => [Identifier] -> m [[Identifier]]
 postsGrouper = liftM (paginateEvery 10) . sortRecentFirst 
 ```
 
-Now we can build a paginate instance:
+Now we can build a `Paginate` instance:
 
 ```Haskell
 main = checkArgs <$> getArgs >>=
@@ -72,13 +72,13 @@ main = checkArgs <$> getArgs >>=
     paginate <- buildPaginateWith postsGrouper postsPattern postsPageId
 ```
 
-In the simple case `postsPattern` can be just string `"posts/*"`, but I use different
-configurations depending on command line parameters (see [Draft posts with
+In a simple case `postsPattern` can be just a string `"posts/*"`, but I use different
+configurations depending on the command line parameters (see [Draft posts with
 Hakyll](/posts/2015-10-31-Draft-posts-with-Hakyll.html) post).
 
-Once we obtain a `Paginate` instance we can generate content using
+Once we obtain a `Paginate` instance we can generate content using the
 `paginateRules` function.  This function takes an instance of `Paginate` as a
-parameter and a function with following signature `PageNumber -> Pattern ->
+parameter and a function with the following signature `PageNumber -> Pattern ->
 Rules()` as a second parameter.
 
 ```Haskell
@@ -101,16 +101,16 @@ Rules()` as a second parameter.
                 >>= relativizeUrls
 ```
 
-Hakyll provides function `paginateContext` which returns a context with a
-number of fields for specific page.  As I said before, this is not enough for
+Hakyll has the `paginateContext` function which returns a context with a
+number of fields for the specific page.  As I said before, this is not enough for
 me, so I'm using `paginateContextPlus`, which is defined in the next section.
 
 ## Extending paginate context
 
-To create paginator I need a list of all pages, and a current page.  Since it is
-not possible to perform equality check inside the template, I decided to split
+To create the paginator I need a list of all the pages, and a current page.  Since it is
+not possible to perform an equality check inside the template, I decided to split
 the list of pages into two parts: pages before the current one, and pages after it.
-Let's write a function which will create a context with this fields:
+Let's write a function which will create a context with these fields:
 
 ```Haskell
 import qualified Data.Map as M
@@ -124,7 +124,7 @@ paginateContextPlus pag currentPage = paginateContext pag currentPage <> mconcat
 ```
 
 I included `paginateContext` into the result of this function.  Since
-we need a lists of pages, we need to use `listField` function to create
+we need a lists of pages, we need to use the `listField` function to create
 contexts.  We need to create nested contexts for the list elements:
 
 ```Haskell
@@ -133,8 +133,8 @@ contexts.  We need to create nested contexts for the list elements:
                   field "pageUrl" (return . snd . itemBody)
 ```
 
-Next step is to get the information about each page except current and split the
-list of the pages into the two parts:
+The next step is to get the information about each page except the current one and split the
+list of the pages into two parts:
 
 ```Haskell
         pages = [pageInfo n | n <- [1..lastPage], n /= currentPage]
@@ -146,7 +146,7 @@ list of the pages into the two parts:
 
 And the last required part is a `wrapPages` function, which converts
 `[(PageNumber, Identifier)]` into `Compiler [Item (String, String)]`. Let's
-start with a helper function to convert single list item into `Compiler (Item
+start with a helper function to convert a single list item into `Compiler (Item
 (String, String))`.
 
 ```Haskell
@@ -156,19 +156,19 @@ start with a helper function to convert single list item into `Compiler (Item
             Nothing -> fail $ "No URL for page: " ++ show n
 ```
 
-Now, map a list with `makeInfoItem`:
+Now, we can map a list with `makeInfoItem`:
 
 ```Haskell
         wrapPages :: [(PageNumber, Identifier)] -> Compiler [Item (String, String)]
         wrapPages = sequence . map makeInfoItem
 ```
 
-Since `Compiler` is a monad, we can convert lift of `Compiler`s to the
-`Compiler` of list.
+Since `Compiler` is a monad, we can convert a list of `Compiler`s to the
+`Compiler` of the list with the `sequence` function.
 
 ## Template
 
-Now, when we have all required variables in the context, it is simple to add
+Now, when we have all the required variables in the context, it is simple to add the
 paginator to the template:
 
 ```html
@@ -213,7 +213,7 @@ paginator to the template:
 </nav>
 ```
 
-It is required to check if the previous/next page variables are defined,
+Hakyll requires you to check if the previous/next page variables are defined,
 because they are not defined on the first/last page.
 
 And that's all.
