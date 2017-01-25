@@ -178,7 +178,7 @@ implicit def primitiveFieldLister[K <: Symbol, H, T <: HList](implicit
 }
 ```
 
-It looks nice, but we got a new kind of problem here.  Our implicits are
+Even though it looks nice, we got a new kind of problem here.  Our implicits are
 ambiguous.  Both `hconsLister` and `primitiveFieldLister` can be applied to
 `HList`.  Scala compiler cannot choose which one is more applicable (even
 thought one of this declarations requires an instance of `FieldLister[H]`, both
@@ -190,3 +190,25 @@ compiler can find an implicit instance in the child class it will use it (it
 will not search all possible implicits in the class parents).  But if it is not
 able to find implicit in the inherited class, it will search in the parent
 class.
+
+Now, when we have the `FieldLister` we can easy implement `StatementGenerator`.
+All we need to do is to wrap `FieldLister` result into statements:
+
+```Scala
+object StatementGenerator {
+  implicit def genericGenerator[A](implicit
+    fieldLister: FieldLister[A]
+  ): StatementGenerator[A] = new StatementGenerator[A] {
+    override def select(table: String): String = {
+      val fields = fieldLister.list.mkString(",")
+      s"SELECT $fields FROM $table"
+    }
+
+    override def insert(table: String) = {
+      val fieldNames = fieldLister.list
+      val fields = fieldNames.mkString(",")
+      val placeholders = List.fill(fieldNames.size)("?").mkString(",")
+      s"INSERT INTO $table ($fields) VALUES ($placeholders)"
+    }
+  }
+}
