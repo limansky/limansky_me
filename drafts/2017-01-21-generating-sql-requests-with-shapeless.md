@@ -1,13 +1,16 @@
 ---
-title: Generation SQL requests with shapeless
+title: SQL generation with shapeless
 tags: Scala, shapeless
 ---
 
-In the previous posts we created a SqlSaver class with can set values in the prepared
-statement.  It assume that the SQL request is correct.  What if the model class
-will be changed?  If the request is not updated we get runtime error, since the
-fields order in not match anymore.  It would be nice to generate requests as
-well.  Something like:
+In the [previous](/posts/2016-11-24-getting-started-with-shapeless.html)
+[posts](http://limansky.me/posts/2016-12-22-fixing-bugs-in-sql-saver.html) we
+created the `SqlSaver` class which can set values into the prepared
+statement.  It assume that the SQL request is correct and the parameters are in
+required order (in the order they are defined in the model). What if the model class
+will be changed?  If the query is not updated we'll get runtime error, since the
+fields order in query and the order of calls performed by `SqlSaver` are not the same
+anymore.  So, it would be nice to generate SQL queries as well.  Something like:
 
 ```Scala
 val query = StatementGenerator[Sale].insert(tableName)
@@ -20,9 +23,6 @@ Let's try to implement it with shapeless.
 
 <!--more-->
 
-Since we need not only values, but a field names, we need to use
-`LabelledGeneric` class instead of `Generic`.
-
 First let's define our type class for statement generators:
 
 ```Scala
@@ -33,7 +33,10 @@ trait StatementGenerator[A] {
 ```
 
 Then we can create a companion object with summoner function and
-implementation:
+implementation for case classes.  Since we need not only values, but the field names,
+we need to use `LabelledGeneric` class instead of `Generic`.
+
+:
 
 ```Scala
 object StatementGenerator {
@@ -49,14 +52,14 @@ object StatementGenerator {
 ```
 
 Ok, we have an instance of `LabelledGeneric` for type `A` which can convert an
-instance of type `A` to HList `R`.  But we don't have an instance.  And we
-don't need values.  All we need is field names.  Shapeless contains package
+instance of type `A` to `HList` `R`.  But we don't have an `A` instance, because we
+don't need values.  All we need is the field names.  Shapeless contains package
 `ops` which provides utilities for different cases.  We need to get keys of the
 key-value records.  Such class called `Keys` is available in package
-`ops.record`.  It takes an HList of records and provides HList of keys.  Next
-thing we need to do is materialize HList of keys into Scala List of Symbols
-(because key in our case is Symbol).  The class we need called `hlist.ToList`.
-We also need to add some constraints on types we use:  type passed to Keys
+`ops.record`.  It takes an `HList` of records and provides `HList` of keys.  Next
+thing we need to do is to materialize `HList` of keys into Scala List of Symbols
+(because key in our case is Symbol).  The utility class we need is called `hlist.ToList`.
+We also have to set the constraints for types we use:  type passed to Keys
 shall be an `HList`, as well as a type passed to `ToList`.  Let's code:
 
 ```Scala
@@ -92,13 +95,13 @@ override def insert(table: String): String = {
 ```
 
 This code is quite straightforward and it works for most cases.  But it doesn't cover all
-features of `SqlSaver`. In the last post we added ability to save nested case
+the features of `SqlSaver`. In the last post we added ability to save nested case
 classes.  So, we need to recursively handle all of the fields and make a flat
 list of primitive ones.  E.g. if we have classes `A(a: String, b: Int)` and
 `B(c: String, d: A, e: Int)` we should get `c :: a :: b :: e :: Nil`.
 
-I think it's better to move this code to separate class `FieldLister`.  Lets
-start with our type class:
+I think it's better to create separate type class `FieldLister`, which will
+provide a list of fields.  Lets start with our type class:
 
 ```Scala
 trait FieldLister[A] {
@@ -120,8 +123,8 @@ object FieldLister {
 ```
 
 You might notice, that we don't need the value of `LabelledGeneric`.  But we
-need it on type level, to link types `A` and `R`, since type `R` *depends* on
-`A`.
+need it on the type level, to link types `A` and `R`, because type `R` *depends* on
+type `A`.
 
 Next, we can create instances for `HList`.  It's obvious that the result list
 for `HNil` is `Nil`:
@@ -138,7 +141,6 @@ straightforward.  We obtain instances for tail and head and concatenating them:
 
 ```Scala
 implicit def hconsLister[K, H, T <: HList](implicit
-  witness: Witness.Aux[K],
   hLister: Lazy[FieldLister[H]],
   tLister: FieldLister[T]
 ): FieldLister[FieldType[K, H] :: T] = new FieldLister[FieldType[K, H] :: T] = {
@@ -157,12 +159,37 @@ scala> case class Test(first: String, second: Int)
 defined class Test
 
 scala> LabelledGeneric[Test]
-res0: LabelledGeneric[Test]{type Repr = String with KeyTag[Symbol with Tagged[String("first")],String] :: Int with KeyTag[Symbol with Tagged[String("second")],Int] :: HNil} =
+res0: LabelledGeneric[Test]{
+  type Repr = String with KeyTag[Symbol with Tagged[String("first")],String] ::
+              Int with KeyTag[Symbol with Tagged[String("second")],Int] ::
+              HNil
+} =
 LabelledGeneric$$anon$1@1b09215f
 ```
 
 I stripped result type for readability. What is important here is that the
-`Repr` type is not just `String :: Int :: HNil`, but, each element is tagged.
+`Repr` type is not just `String :: Int :: HNil`, but, each type element contains
+additional type level information.
+
+If we check the shapeless sources, we find that `FieldType` is just an type alias:
+
+```Scala
+  type FieldType[K, +V] = V with KeyTag[K, V]
+```
+
+That's exactly what we saw in `Repr`.  With this knowledge we can rewrite `Repr` type as:
+
+```Scala
+LabelledGeneric[Test]{
+  type Repr = FieldType[Symbol with Tagged[String("first")],String] ::
+              FieldType[Symbol with Tagged[String("second")],Int] ::
+              HNil
+}
+```
+
+And this is the reason why we need to define result type of `hconsLister` as
+`FieldLister[FieldType[K, H] :: T]`.  And we just need to concatenate lists
+of the head and the tail of the HList.
 
 ...
 
