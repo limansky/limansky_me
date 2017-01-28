@@ -19,7 +19,7 @@ ul.recent-posts { padding-left: 10pt; }
 .sourceCode .diff span.kw { color: #a71d5d; font-weight: bold; }
 .sourceCode .diff span.dt { color: #189136; font-weight: bold; }
 .sourceCode .diff span.st { color: #a71d5d; }
-.sourceCode .diff span.ot { color: #189136; }
+.sourceCode .diff span.va { color: #189136; }
 
 .sourceCode .haskell span.ot { color: #1d1da7; font-weight: bold; }
 .sourceCode .haskell span.dt { font-weight: bold; }
