@@ -36,8 +36,6 @@ Then we can create a companion object with summoner function and
 implementation for case classes.  Since we need not only values, but the field names,
 we need to use `LabelledGeneric` class instead of `Generic`.
 
-:
-
 ```Scala
 object StatementGenerator {
   def apply[A](implicit sg: StatementGenerator[A]): StatementGenerator[A] = sg
@@ -149,7 +147,8 @@ implicit def hconsLister[K, H, T <: HList](implicit
 ```
 
 Lets take a closer look on this function.  To understand what's going on we
-need to check what does the `LabelledGeneric` produce.
+need to understand what does the `LabelledGeneric` produce.  We can check it in
+REPL:
 
 ```Scala
 scala> import shapeless._
@@ -167,9 +166,9 @@ res0: LabelledGeneric[Test]{
 LabelledGeneric$$anon$1@1b09215f
 ```
 
-I stripped result type for readability. What is important here is that the
-`Repr` type is not just `String :: Int :: HNil`, but, each type element contains
-additional type level information.
+I rewrote result type in infix form and removed package names for readability.
+What is important here is that the `Repr` type is not just `String :: Int :: HNil`,
+but each type element contains additional type level information.
 
 If we check the shapeless sources, we find that `FieldType` is just an type alias:
 
@@ -188,13 +187,16 @@ LabelledGeneric[Test]{
 ```
 
 And this is the reason why we need to define result type of `hconsLister` as
-`FieldLister[FieldType[K, H] :: T]`.  And we just need to concatenate lists
-of the head and the tail of the HList.
+`FieldLister[FieldType[K, H] :: T]`.  On the value level we just need to concatenate lists
+produced for the head and for the tail of the `HList`.
 
-...
-
-Ok, but what about the primitive type fields?  What we need to do is to get the
-field name from the `HList` head element and put on top of the result list:
+At this point our code can work with case classes and `HLists` of elements for which we have instances of
+`FieldLister`, i.e. of another HLists and case classes.  But what with the
+primitive types?  If we have a head element of `HList` which does not have an
+instance of `FieldLister` we need to get this field name and set it as a head
+element of the result list.  We need to get the instance of type `K` on value
+level somehow to get the field name.  Shapeless provides type class `Witness`
+for this porpose.  With all of these blocks we can build our function:
 
 ```Scala
 implicit def primitiveFieldLister[K <: Symbol, H, T <: HList](implicit
@@ -216,7 +218,7 @@ move the implicits with lower precedence to the parent class.  Once the
 compiler can find an implicit instance in the child class it will use it (it
 will not search all possible implicits in the class parents).  But if it is not
 able to find implicit in the inherited class, it will search in the parent
-class.
+classes.
 
 Now, when we have the `FieldLister` we can easy implement `StatementGenerator`.
 All we need to do is to wrap `FieldLister` result into statements:
@@ -239,3 +241,5 @@ object StatementGenerator {
     }
   }
 }
+
+And that's all folks.

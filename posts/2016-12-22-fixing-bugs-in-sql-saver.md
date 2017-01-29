@@ -43,7 +43,7 @@ Unfortunately it doesn't compile:
 
 That's strange.  We know that SqlSaver for `Sale` can be instantiated, because
 `Sale` contains only fields of supported types.  Maybe shapeless cannot
-construct `Generic` for our nested classes? If we try to do it in REPR we get
+construct `Generic` for our nested classes? If we try to do it in REPL we get
 the following result:
 
 ```Scala
