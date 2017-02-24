@@ -9,7 +9,13 @@ $for(posts)$
         <p class="tags">$tags$</p>
         $if(preview)$
             $preview$
-            <a href="$url$" class="btn continue"><i class="fa fa-forward"></i>Continue reading</a>
+            <a href="$url$" class="btn continue"><i class="fa fa-forward"></i>
+            $if(previewButton)$
+              $previewButton$
+            $else$
+              Continue reading
+            $endif$
+            </a>
         $else$
             $body$
         $endif$
