@@ -10,6 +10,8 @@ writing in C++, but now I'm mostly using Scala both for my work, and my hobby pr
 
 ### Some of the projects:
 
+* [BeanPurée](https://github.com/limansky/beanpuree). Scala library connecting JavaBeans
+  and shapeless.
 * [MongoQuery](https://github.com/limansky/mongoquery). Scala library to provide string
   interpolators for MongoDB objects.  Supports multiple backend drivers.
 * [TinyMount](https://github.com/limansky/tinymount). Qt-based tray mounter for Linux.
