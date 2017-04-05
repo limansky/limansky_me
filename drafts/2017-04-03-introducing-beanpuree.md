@@ -88,7 +88,7 @@ Since the shape of `Dog` and `ScalaDog` is the same we can convert from one
 class to another using combination of `Generic` and `BeanGeneric`.
 
 Like shapeless provides `LabelledGeneric` with field names information in the
-`Repr` type, BeanPurée provides `LabelledBeanGeneric`, which adds properties
+`Repr` type, BeanPurée provides `LabelledBeanGeneric`, which adds properties'
 names to generic representation.
 
 ```Scala
@@ -97,4 +97,12 @@ lgen: me.limansky.beanpuree.LabelledBeanGeneric[Dog]{type Repr = shapeless.::[St
 
 scala> lgen.from('name ->> "Rex" :: 'age ->> 5 :: 'chaseCats ->> true :: HNil)
 res7: Dog = Dog Rex, 5 is looking for cats
+```
+
+Having this stuff allows to implement more intelligent (but not too much)
+converter between case classes and beans.  This class called `BeanConverter`.
+It doesn't rely on properties definition order.  Instead it use names.
+
+```Scala
+scala> val conv = BeanConverter[Dog, ScalaDog]
 ```
