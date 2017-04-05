@@ -1,23 +1,24 @@
 ---
 title: Introducing BeanPurée
-tags: Scala, shapeless, BeanPurée
+tags: Scala, Java, shapeless, BeanPurée
 ---
 
-As a Scala developer I prefer to use Scala libraries than Java ones for my
-code.  However it is not always possible.  You may not find required library,
-or you just have to use some legacy code you already have.  Even though Scala
-runs on JVM and fully compatible with Java, the languages have different
-ideology, different code style and sometimes different API.  Thus, in Scala we
-prefer to use immutable case classes for the data modeling.  However in Java
+As a Scala developer I prefer to use Scala libraries rather than Java ones for my
+code.  However, it is not always possible.  Sometimes I might not find a required library,
+or I just have to use some legacy code I already have.  Even though Scala
+runs on a JVM and is fully compatible with Java, the languages have different
+ideologies, different code styles and sometimes different API's.  Thus, in Scala it is
+preferable to use immutable case classes for the data modeling.  However, in Java
 the common building blocks are JavaBeans, which are mutable.  Another problem
 is that a lot of Scala libraries expect case classes.  Even if they work with
 JavaBeans, usually you have to write some boilerplate code.
 
-So, quite often it is easier to have separate model in your Scala code, and
+So, quite often it is easier to have a separate model in your Scala code, and
 converters between Java model classes and Scala ones.
 
-BeanPurée is a library helps you to automate this process.  And you can do even
-more, because it's a bridge from JavaBeans to shapeless.
+[BeanPurée](https://github.com/limansky/beanpuree) is a library that helps you
+to automate this process.  And it helps you to do even more, because it's a
+bridge from JavaBeans to shapeless.
 
 <!--more-->
 
@@ -45,7 +46,7 @@ public class Dog {
 }
 ```
 
-BeanPurée provides `BeanGeneric` class which has the same function with
+BeanPurée provides `BeanGeneric` class, which has the same function with
 shapeless's `Generic`:
 
 ```Scala
@@ -58,8 +59,8 @@ gen: me.limansky.beanpuree.BeanGeneric[Dog]{type Repr = shapeless.::[String,shap
 ```
 
 We just get a `BeanGeneric` instance with representation type `String :: Int ::
-Boolean :: HNil`.  Internally `BeanGeneric` uses the getters order to build the
-Repr type.  Thus we get this type.  Let's try to use it:
+Boolean :: HNil`.  Internally, `BeanGeneric` uses the getters order to build the
+Repr type.  Let's try to use it:
 
 ```Scala
 scala> val fima = gen.from("Fima" :: 12 :: false :: HNil)
@@ -85,11 +86,11 @@ res4: ScalaDog = ScalaDog(Fima,12,true)
 ```
 
 Since the shape of `Dog` and `ScalaDog` is the same we can convert from one
-class to another using combination of `Generic` and `BeanGeneric`.
+class to another using a combination of `Generic` and `BeanGeneric`.
 
-Like shapeless provides `LabelledGeneric` with field names information in the
-`Repr` type, BeanPurée provides `LabelledBeanGeneric`, which adds properties'
-names to generic representation.
+Just as shapeless provides `LabelledGeneric` with field names information in the
+`Repr` type, BeanPurée provides `LabelledBeanGeneric`, which adds property
+names to the generic representation.
 
 ```Scala
 scala> val lgen = LabelledBeanGeneric[Dog]
@@ -99,10 +100,21 @@ scala> lgen.from('name ->> "Rex" :: 'age ->> 5 :: 'chaseCats ->> true :: HNil)
 res7: Dog = Dog Rex, 5 is looking for cats
 ```
 
-Having this stuff allows to implement more intelligent (but not too much)
-converter between case classes and beans.  This class called `BeanConverter`.
-It doesn't rely on properties definition order.  Instead it use names.
+Having this stuff allows me to implement a more intelligent (but not too much)
+converter between case classes and beans.  This class is called `BeanConverter`.
+It doesn't rely on a definition order of properties .  Instead, it uses names.
 
 ```Scala
+scala> case class ScalaDog(name: String, chaseCats: Boolean, age: Int)
+defined class ScalaDog
+
 scala> val conv = BeanConverter[Dog, ScalaDog]
+conv: me.limansky.beanpuree.BeanConverter[Dog,ScalaDog] = me.limansky.beanpuree.BeanConverter$$anon$1@5dd7b913
+
+scala> conv.productToBean(ScalaDog("Lassie", false, 5))
+res0: Dog = Dog Lassie, 5 is sleeping
 ```
+
+That's all the features of the release 0.1, which is available in the Sonatype
+Maven repository.  I have several ideas for the next releases, e.g automatic
+Java types to Scala types conversion, and partial converters.
