@@ -7,6 +7,7 @@ import qualified Data.Map as M
 import Data.Monoid ((<>))
 import System.Environment (getArgs, withArgs)
 import Hakyll
+import Text.Pandoc.Options
 
 --------------------------------------------------------------------------------
 main :: IO ()
@@ -22,6 +23,10 @@ main = checkArgs <$> getArgs >>=
         compile compressCssCompiler
 
     match "js/*" $ do
+        route   idRoute
+        compile copyFileCompiler
+
+    match "lib/*" $ do
         route   idRoute
         compile copyFileCompiler
 
@@ -56,6 +61,11 @@ main = checkArgs <$> getArgs >>=
             >>= loadAndApplyTemplate "templates/post-with-comment.html" defaultContext
             >>= loadAndApplyTemplate "templates/post-right-column.html" (postCtx tags <> mainCtx tags postsPattern)
             >>= loadAndApplyTemplate "templates/default.html" defaultContext
+            >>= relativizeUrls
+
+    match "slides/*" $ do
+        route $ setExtension "html"
+        compile $ pandocCompilerWith defaultHakyllReaderOptions revealJsWriterOptions
             >>= relativizeUrls
 
     create ["atom.xml"] $ do
@@ -175,3 +185,12 @@ paginateContextPlus pag currentPage = paginateContext pag currentPage <> mconcat
         makeInfoItem (n, i) = getRoute i >>= \mbR -> case mbR of
             Just r  -> makeItem (show n, toUrl r)
             Nothing -> fail $ "No URL for page: " ++ show n
+
+revealJsWriterOptions :: WriterOptions
+revealJsWriterOptions = defaultHakyllWriterOptions
+    { writerTemplate = "templates/template-revealjs.html"
+    , writerSectionDivs = True
+    , writerStandalone = True
+    , writerHtml5 = True
+    , writerVariables = [("theme", "biage"), ("transition", "linear")]
+    }
