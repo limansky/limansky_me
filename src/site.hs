@@ -18,7 +18,7 @@ main = checkArgs <$> getArgs >>=
         route   idRoute
         compile copyFileCompiler
 
-    match "css/*" $ do
+    match "css/**" $ do
         route   idRoute
         compile compressCssCompiler
 
@@ -26,7 +26,7 @@ main = checkArgs <$> getArgs >>=
         route   idRoute
         compile copyFileCompiler
 
-    match "lib/*" $ do
+    match "lib/**" $ do
         route   idRoute
         compile copyFileCompiler
 
@@ -65,7 +65,10 @@ main = checkArgs <$> getArgs >>=
 
     match "slides/*" $ do
         route $ setExtension "html"
-        compile $ pandocCompilerWith defaultHakyllReaderOptions revealJsWriterOptions
+        compile $ do
+            template <- loadBody "pandoc-templates/revealjs.html"
+            pandocCompilerWith defaultHakyllReaderOptions $ revealJsWriterOptions template
+            >>= loadAndApplyTemplate "templates/slides.html" slidesCtx
             >>= relativizeUrls
 
     create ["atom.xml"] $ do
@@ -114,6 +117,7 @@ main = checkArgs <$> getArgs >>=
 
     match "templates/*" $ compile templateCompiler
 
+    match "pandoc-templates/*" $ compile getResourceBody
 
 --------------------------------------------------------------------------------
 stripPages = gsubRoute "pages/" $ const ""
@@ -133,6 +137,11 @@ postCtx tags =
 
 previewCtx :: Tags -> Context String
 previewCtx tags = teaserField "preview" "content" <> postCtx tags
+
+slidesCtx :: Context String
+slidesCtx =
+    dateField "date" "%B %e, %Y" <>
+    defaultContext
 
 feedCfg :: FeedConfiguration
 feedCfg = FeedConfiguration
@@ -186,11 +195,10 @@ paginateContextPlus pag currentPage = paginateContext pag currentPage <> mconcat
             Just r  -> makeItem (show n, toUrl r)
             Nothing -> fail $ "No URL for page: " ++ show n
 
-revealJsWriterOptions :: WriterOptions
-revealJsWriterOptions = defaultHakyllWriterOptions
-    { writerTemplate = "templates/template-revealjs.html"
+revealJsWriterOptions :: String -> WriterOptions
+revealJsWriterOptions template = defaultHakyllWriterOptions
+    { writerTemplate = template
     , writerSectionDivs = True
     , writerStandalone = True
     , writerHtml5 = True
-    , writerVariables = [("theme", "biage"), ("transition", "linear")]
     }
