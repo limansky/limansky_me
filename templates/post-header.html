@@ -1,7 +1,7 @@
 $if(background)$
-<header class="intro-header" style="background-image: url('/images/bg/$background$')">
+<header class="masthead" style="background-image: url('/images/bg/$background$')">
 $else$
-<header class="intro-header" style="background-image: url('/images/bg/bubbles.jpg')">
+<header class="masthead" style="background-image: url('/images/bg/bubbles.jpg')">
 $endif$
   <div class="container">
     <div class="row">
@@ -9,8 +9,7 @@ $endif$
         <div class="post-heading">
           <h1>$title$</h1>
           $if(subtitle)$
-            <hr>
-            <h2>$subtitle$</h2>
+            <span class="subheading">$subtitle$</span>
           $endif$
           <div>Posted on $date$</div>
           <div class="tags">Tags $tags$</div>
