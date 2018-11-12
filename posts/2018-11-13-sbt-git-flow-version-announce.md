@@ -101,3 +101,9 @@ versionPolicy := (exact("big-release") -> next-major()) +: versionPolicy.value
 ```
 
 This will set the next major version for the "big-release" branch.
+
+Current verion of the plugin is `0.1`.  So, to add to your `project/plugins.sbt` the line:
+
+```
+addSbtPlugin("me.limansky" % "sbt-git-flow-version" % "0.1")
+```
