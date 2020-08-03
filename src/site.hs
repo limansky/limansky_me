@@ -150,7 +150,7 @@ postItems postsPattern = do
     identifiers <- getMatches postsPattern
     return [Item identifier "" | identifier <- identifiers]
 
-postsGrouper :: MonadMetadata m => [Identifier] -> m [[Identifier]]
+postsGrouper :: (MonadFail m, MonadMetadata m) => [Identifier] -> m [[Identifier]]
 postsGrouper = liftM (paginateEvery 10) . sortRecentFirst
 
 postsPageId :: PageNumber -> Identifier
