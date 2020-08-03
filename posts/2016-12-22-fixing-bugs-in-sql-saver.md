@@ -3,7 +3,7 @@ title: Fixing bugs in SqlSaver
 tags: Scala, shapeless
 ---
 
-In the [previous post](/2016-11-24-getting-started-with-shapeless.html)
+In the [previous post](/posts/2016-11-24-getting-started-with-shapeless.html)
 I created `SqlSaver` class.  Later, playing with it, I found that it has
 several bugs.
 
