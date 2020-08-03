@@ -6,6 +6,8 @@ import Data.List (partition)
 import qualified Data.Map as M
 import Data.Monoid ((<>))
 import System.Environment (getArgs, withArgs)
+import qualified System.Process as Process
+import System.Exit (ExitCode)
 import Hakyll
 
 --------------------------------------------------------------------------------
@@ -137,13 +139,24 @@ feedCfg = FeedConfiguration
 -- returns post pattern, configuration, command arguments
 checkArgs :: [String] -> (Pattern, Configuration, [String])
 checkArgs args = case partition (/= "--with-drafts") args of
-    (_, []) -> ("posts/*",                  defaultConfiguration,   args)
+    (_, []) -> ("posts/*",                  config,                 args)
     (as, _) -> ("posts/*" .||. "drafts/*",  draftConf,              as)
-    where draftConf = defaultConfiguration {
+    where draftConf = config {
         destinationDirectory = "_draftSite"
       , storeDirectory = "_draftCache"
       , tmpDirectory = "_draftCache/tmp"
       }
+
+config :: Configuration
+config = defaultConfiguration {
+      deploySite = deploy
+    }
+  where
+    deploy :: Configuration -> IO ExitCode
+    deploy _ = do
+      branch <- Process.readProcess "git" ["rev-parse", "--abbrev-ref", "HEAD"] ""
+      case words branch of
+        ["master"] -> Process.rawSystem "rsync" [ "--checksum", "-av", "_site/", "limansky.me:/var/www/limansky"]
 
 postItems :: Pattern ->  Compiler [Item String]
 postItems postsPattern = do
