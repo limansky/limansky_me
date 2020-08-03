@@ -1,0 +1,13 @@
+language: haskell
+ghc:
+  - "8.8"
+
+branches:
+  only:
+    - master
+
+script:
+  - cabal configure
+  - cabal build
+  - cabal exec site build
+  - cabal exec site check
