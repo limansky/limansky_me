@@ -3,6 +3,10 @@ cabal: "3.0"
 ghc:
   - "8.8.3"
 
+cache:
+  directories:
+  - "$HOME/.cabal/store"
+
 branches:
   only:
     - master
