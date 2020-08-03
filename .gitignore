@@ -2,5 +2,5 @@ _site/
 _cache/
 _draftSite/
 _draftCache/
-dist/
+dist-newstyle/
 *.swp
