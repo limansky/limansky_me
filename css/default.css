@@ -25,4 +25,4 @@ ul.recent-posts { padding-left: 10pt; }
 .sourceCode .haskell span.dt { font-weight: bold; }
 
 a.btn.continue:hover { background-color: #0085A1; color: #ffffff; }
-.post-heading .tags a { color: #ffffff; text-decoration: underline; }
+header.masthead .post-heading .tags a { color: #ffffff; text-decoration: underline; }

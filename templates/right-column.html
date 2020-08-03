@@ -1,15 +1,17 @@
 <div class="container">
-  <div class="col-md-9">
-    $body$
-  </div>
-  <div class="col-md-3">
-    <h3>Recent posts</h3>
-    <ul class="recent-posts">
-      $for(recentPosts)$
-        <li><a href="$url$">$title$</a></li>
-      $endfor$
-    </ul>
-    <h3>Tag cloud</h3>
-    $tagCloud$
+  <div class="row">
+    <div class="col col-md-9">
+      $body$
+    </div>
+    <div class="col col-md-3">
+      <h3>Recent posts</h3>
+      <ul class="recent-posts">
+        $for(recentPosts)$
+          <li><a href="$url$">$title$</a></li>
+        $endfor$
+      </ul>
+      <h3>Tag cloud</h3>
+      $tagCloud$
+    </div>
   </div>
 </div>
