@@ -14,6 +14,8 @@ writing in C++, but now I'm mostly using Scala both for my work, and my hobby pr
   and shapeless.
 * [MongoQuery](https://github.com/limansky/mongoquery). Scala library to provide string
   interpolators for MongoDB objects.  Supports multiple backend drivers.
+* [sbt-git-flow-version](https://github.com/limansky/sbt-git-flow-version). sbt plugin
+  for version automation based on different rules per branch patterns.
 * [TinyMount](https://github.com/limansky/tinymount). Qt-based tray mounter for Linux.
   It uses UDisks for mounting.
 * [lift-salatauth](https://github.com/limansky/lift-salatauth). Plugin for the
