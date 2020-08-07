@@ -22,7 +22,7 @@ writing in C++, but now I'm mostly using Scala both for my work, and my hobby pr
   [Lift framework]() to support authorization via
   [Salat](https://github.com/novus/salat).
 * [lift-validate](https://github.com/limansky/lift-validate). Plugin for the
-  [Lift framework]() to add [jQuery validation](http://jqueryvalidation.org/) support.
+  [Lift framework]() to add [jQuery validation](https://jqueryvalidation.org/) support.
 
 ### Not only programming
 
