@@ -5,6 +5,7 @@ ghc:
 
 cache:
   directories:
+  - "$HOME/.cabal/packages"
   - "$HOME/.cabal/store"
 
 branches:
