@@ -15,11 +15,19 @@ jobs:
       - name: Setup Haskell
         uses: haskell/actions/setup@v1
         with:
-          ghc-version: '8.10.4'
+          ghc-version: '8.10.5'
 
       - name: Dependenies
+        run: cabal freeze
+
+      - name: Cache
+        uses: actions/cache@v1
+        with:
+          path: ${{ steps.setup-haskell-cabal.outputs.cabal-store }}
+          key: ${{ runner.os }}-8.10.5-${{ hashFiles('cabal.project.freeze') }}
+
+      - name: Compile and check
         run: cabal configure
-    
       - run: cabal build
       - run: cabal exec site build
       - run: cabal exec site check
