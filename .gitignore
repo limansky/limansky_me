@@ -4,3 +4,4 @@ _draftSite/
 _draftCache/
 dist-newstyle/
 *.swp
+cabal.project.freeze
