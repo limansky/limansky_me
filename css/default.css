@@ -10,6 +10,8 @@
 ul.recent-posts { padding-left: 10pt; }
 .recent-posts li { list-style-type: none; }
 
+pre code { font-size: 80%; }
+
 .sourceCode span.co { color: #969896; }
 .sourceCode span.kw { color: #a71d5d; font-weight: bold; }
 .sourceCode span.st { color: #183691; font-style: italic; }
