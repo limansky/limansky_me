@@ -1,0 +1,25 @@
+name: Site
+
+on:
+  push:
+    branches: [master]
+
+jobs:
+  build: 
+    name: Build and check
+
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Setup Haskell
+        uses: actions/setup-haskell@v1.1
+        with:
+          ghc-version: '8.10'
+
+      - name: Dependenies
+        run: cabal configure
+    
+      - run: cabal build
+      - run: cabal exec site build
+      - run: cabal exec site check
