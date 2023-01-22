@@ -8,7 +8,7 @@ generic programming is the one of the areas where we have a lot of changes.  I a
 [shapeless](https://github.com/milessabin/shapeless) with Scala 2, but if not, I'll try to explain things in this post.
 However I'd recommend to read [this post][1] before if you don't even know what shapeless is.
 
-<!--MORE-->
+<!--more-->
 
 ### Tuples in Scala 3
 
