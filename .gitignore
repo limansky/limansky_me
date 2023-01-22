@@ -3,5 +3,6 @@ _cache/
 _draftSite/
 _draftCache/
 dist-newstyle/
+node_modules/
 *.swp
 cabal.project.freeze

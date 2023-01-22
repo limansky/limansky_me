@@ -9,6 +9,7 @@ import System.Environment (getArgs, withArgs)
 import qualified System.Process as Process
 import System.Exit (ExitCode)
 import Hakyll
+import Hakyll.Web.Sass (sassCompiler)
 
 --------------------------------------------------------------------------------
 main :: IO ()
@@ -19,9 +20,9 @@ main = checkArgs <$> getArgs >>=
         route   idRoute
         compile copyFileCompiler
 
-    match "css/*" $ do
+    match "css/*.scss" $ do
         route   idRoute
-        compile compressCssCompiler
+        compile (fmap compressCss <$> sassCompiler)
 
     match "js/*" $ do
         route   idRoute

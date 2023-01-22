@@ -8,6 +8,7 @@ executable site
   hs-source-dirs:   src
   build-depends:    base == 4.*
                   , hakyll >= 4.7 && < 4.16
+                  , hakyll-sass >= 0.2 && < 0.3
                   , containers >= 0.3 && < 0.7
                   , process >= 1.6 && < 1.7
   ghc-options:      -threaded
