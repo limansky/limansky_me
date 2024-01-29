@@ -10,19 +10,19 @@ jobs:
 
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Setup Haskell
         id: setup-haskell-cabal
-        uses: haskell/actions/setup@v1
+        uses: haskell-actions/setup@v2
         with:
-          ghc-version: '8.10.5'
+          ghc-version: '9.4'
 
       - name: Dependenies
         run: cabal freeze
 
       - name: Cache
-        uses: actions/cache@v2.1.6
+        uses: actions/cache@v4
         with:
           path: ${{ steps.setup-haskell-cabal.outputs.cabal-store }}
           key: ${{ runner.os }}-8.10.5-${{ hashFiles('cabal.project.freeze') }}
