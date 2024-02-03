@@ -1,7 +1,7 @@
 --------------------------------------------------------------------------------
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE LambdaCase #-}
 import Control.Applicative ((<$>))
-import Control.Monad (liftM)
 import Data.List (partition)
 import qualified Data.Map as M
 import Data.Monoid ((<>))
@@ -63,7 +63,7 @@ main = checkArgs <$> getArgs >>=
     create ["atom.xml"] $ do
         route idRoute
         compile $ do
-            let feedCtx = (postCtx tags) <> bodyField "description"
+            let feedCtx = postCtx tags <> bodyField "description"
             posts <- fmap (take 10) . recentFirst =<<
                 loadAllSnapshots postsPattern "content"
             renderAtom feedCfg feedCtx posts
@@ -164,10 +164,10 @@ postItems postsPattern = do
     return [Item identifier "" | identifier <- identifiers]
 
 postsGrouper :: (MonadFail m, MonadMetadata m) => [Identifier] -> m [[Identifier]]
-postsGrouper = liftM (paginateEvery 10) . sortRecentFirst
+postsGrouper = fmap (paginateEvery 10) . sortRecentFirst
 
 postsPageId :: PageNumber -> Identifier
-postsPageId n = fromFilePath $ if (n == 1) then "index.html" else show n ++ "/index.html"
+postsPageId n = fromFilePath $ if n == 1 then "index.html" else show n ++ "/index.html"
 
 paginateContextPlus :: Paginate -> PageNumber -> Context a
 paginateContextPlus pag currentPage = paginateContext pag currentPage <> mconcat
@@ -183,8 +183,8 @@ paginateContextPlus pag currentPage = paginateContext pag currentPage <> mconcat
         pages = [pageInfo n | n <- [1..lastPage], n /= currentPage]
         (pagesBefore, pagesAfter) = span ((< currentPage) . fst) pages
 
-        wrapPages = sequence . map makeInfoItem
+        wrapPages = mapM makeInfoItem
 
-        makeInfoItem (n, i) = getRoute i >>= \mbR -> case mbR of
+        makeInfoItem (n, i) = getRoute i >>= \case
             Just r  -> makeItem (show n, toUrl r)
             Nothing -> fail $ "No URL for page: " ++ show n

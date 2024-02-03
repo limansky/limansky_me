@@ -2,33 +2,62 @@ name: Site
 
 on:
   push:
-    branches: [master]
+    branches: ['master']
+
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
 
 jobs:
-  build: 
+  build:
     name: Build and check
 
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
 
       - name: Setup Haskell
         id: setup-haskell-cabal
-        uses: haskell/actions/setup@v1
+        uses: haskell-actions/setup@v2
         with:
-          ghc-version: '8.10.5'
+          ghc-version: '9.4'
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
 
       - name: Dependenies
         run: cabal freeze
 
       - name: Cache
-        uses: actions/cache@v2.1.6
+        uses: actions/cache@v4
         with:
           path: ${{ steps.setup-haskell-cabal.outputs.cabal-store }}
-          key: ${{ runner.os }}-8.10.5-${{ hashFiles('cabal.project.freeze') }}
+          key: ${{ runner.os }}-ghc-${{ steps.setup.outputs.ghc-version }}-cabal-${{ steps.setup.outputs.cabal-version }}
 
       - name: Compile and check
         run: cabal configure
       - run: cabal build
       - run: cabal exec site build
       - run: cabal exec site check
+
+      - name: Upload artifacts
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./_site
+
+  deploy:
+    name: Deploy
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/master'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
