@@ -87,6 +87,17 @@ main = checkArgs <$> getArgs >>=
                 >>= loadAndApplyTemplate "templates/default.html" archiveCtx
                 >>= relativizeUrls
 
+    create ["sitemap.xml"] $ do
+        route idRoute
+        compile $ do
+            posts <- recentFirst =<< loadAll "posts/*"
+            singlePages <- loadAll (fromList ["pages/about.md" ])
+            let pages = posts <> singlePages
+                sitemapCtx =
+                    constField "root" root <> -- here
+                    listField "pages" (postCtx tags) (return pages)
+            makeItem ""
+                >>= loadAndApplyTemplate "templates/sitemap.xml" sitemapCtx
 
     paginate <- buildPaginateWith postsGrouper postsPattern postsPageId
 
@@ -114,6 +125,9 @@ main = checkArgs <$> getArgs >>=
 --------------------------------------------------------------------------------
 stripPages = gsubRoute "pages/" $ const ""
 
+root :: String
+root = "http://limansky.me"
+
 mainCtx :: Tags -> Pattern -> Context String
 mainCtx tags postsPattern =
     let recentPosts = postItems postsPattern >>= fmap (take 5) . recentFirst in
@@ -123,6 +137,7 @@ mainCtx tags postsPattern =
 
 postCtx :: Tags -> Context String
 postCtx tags =
+    constField "root" root <>
     dateField "date" "%B %e, %Y" <>
     tagsField "tags" tags <>
     defaultContext
