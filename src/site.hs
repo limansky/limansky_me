@@ -34,6 +34,10 @@ main = checkArgs <$> getArgs >>=
             >>= loadAndApplyTemplate "templates/default.html" defaultContext
             >>= relativizeUrls
 
+    match "robots.txt" $ do
+        route   idRoute
+        compile copyFileCompiler
+
     tags <- buildTags postsPattern (fromCapture "tags/*.html")
 
     tagsRules tags $ \tag pattern -> do
