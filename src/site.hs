@@ -95,7 +95,9 @@ main = checkArgs <$> getArgs >>=
             let pages = posts <> singlePages
                 sitemapCtx =
                     constField "root" root <> -- here
-                    listField "pages" (postCtx tags) (return pages)
+                    dateField "date" "%Y-%m-%d" <>
+                    listField "pages" sitemapCtx (return pages) <>
+                    defaultContext
             makeItem ""
                 >>= loadAndApplyTemplate "templates/sitemap.xml" sitemapCtx
 
