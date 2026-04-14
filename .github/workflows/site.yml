@@ -23,7 +23,7 @@ jobs:
         id: setup-haskell-cabal
         uses: haskell-actions/setup@v2
         with:
-          ghc-version: '9.4'
+          ghc-version: '9.12'
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
